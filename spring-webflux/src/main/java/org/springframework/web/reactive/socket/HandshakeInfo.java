@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.web.reactive.socket;
 
 import java.net.URI;
 import java.security.Principal;
-import java.util.Optional;
+import java.util.Collections;
+import java.util.Map;
 
 import reactor.core.publisher.Mono;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -32,7 +35,6 @@ import org.springframework.util.Assert;
  * @since 5.0
  * @see WebSocketSession#getHandshakeInfo()
  */
-@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class HandshakeInfo {
 
 	private final URI uri;
@@ -41,7 +43,10 @@ public class HandshakeInfo {
 
 	private final HttpHeaders headers;
 
-	private final Optional<String> protocol;
+	@Nullable
+	private final String protocol;
+
+	private final Map<String, Object> attributes;
 
 
 	/**
@@ -49,17 +54,34 @@ public class HandshakeInfo {
 	 * @param uri the endpoint URL
 	 * @param headers request headers for server or response headers or client
 	 * @param principal the principal for the session
-	 * @param protocol the negotiated sub-protocol
+	 * @param protocol the negotiated sub-protocol (may be {@code null})
 	 */
-	public HandshakeInfo(URI uri, HttpHeaders headers, Mono<Principal> principal, Optional<String> protocol) {
-		Assert.notNull(uri, "URI is required.");
-		Assert.notNull(headers, "HttpHeaders are required.");
-		Assert.notNull(principal, "Principal is required.");
-		Assert.notNull(protocol, "Sub-protocol is required.");
+	public HandshakeInfo(URI uri, HttpHeaders headers, Mono<Principal> principal, @Nullable String protocol) {
+		this(uri, headers, principal, protocol, Collections.emptyMap());
+	}
+
+	/**
+	 * Constructor with information about the handshake.
+	 * @param uri the endpoint URL
+	 * @param headers request headers for server or response headers or client
+	 * @param principal the principal for the session
+	 * @param protocol the negotiated sub-protocol (may be {@code null})
+	 * @param attributes initial attributes to use for the WebSocket session
+	 * @since 5.1
+	 */
+	public HandshakeInfo(URI uri, HttpHeaders headers, Mono<Principal> principal,
+			@Nullable String protocol, Map<String, Object> attributes) {
+
+		Assert.notNull(uri, "URI is required");
+		Assert.notNull(headers, "HttpHeaders are required");
+		Assert.notNull(principal, "Principal is required");
+		Assert.notNull(attributes, "'attributes' is required");
+
 		this.uri = uri;
 		this.headers = headers;
 		this.principalMono = principal;
 		this.protocol = protocol;
+		this.attributes = attributes;
 	}
 
 
@@ -86,12 +108,22 @@ public class HandshakeInfo {
 	}
 
 	/**
-	 * The sub-protocol negotiated at handshake time.
+	 * The sub-protocol negotiated at handshake time, or {@code null} if none.
 	 * @see <a href="https://tools.ietf.org/html/rfc6455#section-1.9">
-	 *     https://tools.ietf.org/html/rfc6455#section-1.9</a>
+	 * https://tools.ietf.org/html/rfc6455#section-1.9</a>
 	 */
-	public Optional<String> getSubProtocol() {
+	@Nullable
+	public String getSubProtocol() {
 		return this.protocol;
+	}
+
+	/**
+	 * Attributes extracted from the handshake request to be added to the
+	 * WebSocket session.
+	 * @since 5.1
+	 */
+	public Map<String, Object> getAttributes() {
+		return this.attributes;
 	}
 
 

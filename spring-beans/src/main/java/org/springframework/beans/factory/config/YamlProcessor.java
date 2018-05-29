@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,32 +18,30 @@ package org.springframework.beans.factory.config;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
-import org.yaml.snakeyaml.nodes.MappingNode;
-import org.yaml.snakeyaml.parser.ParserException;
 import org.yaml.snakeyaml.reader.UnicodeReader;
 
 import org.springframework.core.CollectionFactory;
 import org.springframework.core.io.Resource;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
  * Base class for YAML factories.
+ *
+ * <p>Requires SnakeYAML 1.18 or higher, as of Spring Framework 5.0.6.
  *
  * @author Dave Syer
  * @author Juergen Hoeller
@@ -144,9 +142,14 @@ public abstract class YamlProcessor {
 
 	/**
 	 * Create the {@link Yaml} instance to use.
+	 * <p>The default implementation sets the "allowDuplicateKeys" flag to {@code false},
+	 * enabling built-in duplicate key handling in SnakeYAML 1.18+.
+	 * @see LoaderOptions#setAllowDuplicateKeys(boolean)
 	 */
 	protected Yaml createYaml() {
-		return new Yaml(new StrictMapAppenderConstructor());
+		LoaderOptions options = new LoaderOptions();
+		options.setAllowDuplicateKeys(false);
+		return new Yaml(options);
 	}
 
 	private boolean process(MatchCallback callback, Yaml yaml, Resource resource) {
@@ -201,12 +204,10 @@ public abstract class YamlProcessor {
 		}
 
 		Map<Object, Object> map = (Map<Object, Object>) object;
-		for (Entry<Object, Object> entry : map.entrySet()) {
-			Object value = entry.getValue();
+		map.forEach((key, value) -> {
 			if (value instanceof Map) {
 				value = asMap(value);
 			}
-			Object key = entry.getKey();
 			if (key instanceof CharSequence) {
 				result.put(key.toString(), value);
 			}
@@ -214,7 +215,7 @@ public abstract class YamlProcessor {
 				// It has to be a map key in this case
 				result.put("[" + key.toString() + "]", value);
 			}
-		}
+		});
 		return result;
 	}
 
@@ -272,9 +273,8 @@ public abstract class YamlProcessor {
 		return result;
 	}
 
-	private void buildFlattenedMap(Map<String, Object> result, Map<String, Object> source, String path) {
-		for (Entry<String, Object> entry : source.entrySet()) {
-			String key = entry.getKey();
+	private void buildFlattenedMap(Map<String, Object> result, Map<String, Object> source, @Nullable String path) {
+		source.forEach((key, value) -> {
 			if (StringUtils.hasText(path)) {
 				if (key.startsWith("[")) {
 					key = path + key;
@@ -283,7 +283,6 @@ public abstract class YamlProcessor {
 					key = path + '.' + key;
 				}
 			}
-			Object value = entry.getValue();
 			if (value instanceof String) {
 				result.put(key, value);
 			}
@@ -297,16 +296,20 @@ public abstract class YamlProcessor {
 				// Need a compound key
 				@SuppressWarnings("unchecked")
 				Collection<Object> collection = (Collection<Object>) value;
-				int count = 0;
-				for (Object object : collection) {
-					buildFlattenedMap(result,
-							Collections.singletonMap("[" + (count++) + "]", object), key);
+				if (collection.isEmpty()) {
+					result.put(key, "");
+				} else {
+					int count = 0;
+					for (Object object : collection) {
+						buildFlattenedMap(result, Collections.singletonMap(
+								"[" + (count++) + "]", object), key);
+					}
 				}
 			}
 			else {
 				result.put(key, (value != null ? value : ""));
 			}
-		}
+		});
 	}
 
 
@@ -388,47 +391,6 @@ public abstract class YamlProcessor {
 		 * Take the first resource in the list that exists and use just that.
 		 */
 		FIRST_FOUND
-	}
-
-
-	/**
-	 * A specialized {@link Constructor} that checks for duplicate keys.
-	 */
-	protected static class StrictMapAppenderConstructor extends Constructor {
-
-		// Declared as public for use in subclasses
-		public StrictMapAppenderConstructor() {
-			super();
-		}
-
-		@Override
-		protected Map<Object, Object> constructMapping(MappingNode node) {
-			try {
-				return super.constructMapping(node);
-			}
-			catch (IllegalStateException ex) {
-				throw new ParserException("while parsing MappingNode",
-						node.getStartMark(), ex.getMessage(), node.getEndMark());
-			}
-		}
-
-		@Override
-		protected Map<Object, Object> createDefaultMap() {
-			final Map<Object, Object> delegate = super.createDefaultMap();
-			return new AbstractMap<Object, Object>() {
-				@Override
-				public Object put(Object key, Object value) {
-					if (delegate.containsKey(key)) {
-						throw new IllegalStateException("Duplicate key: " + key);
-					}
-					return delegate.put(key, value);
-				}
-				@Override
-				public Set<Entry<Object, Object>> entrySet() {
-					return delegate.entrySet();
-				}
-			};
-		}
 	}
 
 }

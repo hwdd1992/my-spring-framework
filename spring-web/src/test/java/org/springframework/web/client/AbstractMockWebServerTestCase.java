@@ -121,9 +121,9 @@ public class AbstractMockWebServerTestCase {
 	}
 
 	private MockResponse multipartRequest(RecordedRequest request) {
-		String contentType = request.getHeader("Content-Type");
-		assertTrue(contentType.startsWith("multipart/form-data"));
-		String boundary = contentType.split("boundary=")[1];
+		MediaType mediaType = MediaType.parseMediaType(request.getHeader("Content-Type"));
+		assertTrue(mediaType.isCompatibleWith(MediaType.MULTIPART_FORM_DATA));
+		String boundary = mediaType.getParameter("boundary");
 		Buffer body = request.getBody();
 		try {
 			assertPart(body, "form-data", boundary, "name 1", "text/plain", "value 1");
@@ -165,7 +165,7 @@ public class AbstractMockWebServerTestCase {
 	}
 
 	private MockResponse formRequest(RecordedRequest request) {
-		assertEquals("application/x-www-form-urlencoded", request.getHeader("Content-Type"));
+		assertEquals("application/x-www-form-urlencoded;charset=UTF-8", request.getHeader("Content-Type"));
 		String body = request.getBody().readUtf8();
 		assertThat(body, Matchers.containsString("name+1=value+1"));
 		assertThat(body, Matchers.containsString("name+2=value+2%2B1"));

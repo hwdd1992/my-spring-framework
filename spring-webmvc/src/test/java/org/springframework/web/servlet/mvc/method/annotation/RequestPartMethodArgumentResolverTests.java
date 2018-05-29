@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.springframework.core.annotation.SynthesizingMethodParameter;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.lang.Nullable;
 import org.springframework.mock.web.test.MockHttpServletRequest;
 import org.springframework.mock.web.test.MockHttpServletResponse;
 import org.springframework.mock.web.test.MockMultipartFile;
@@ -102,7 +103,7 @@ public class RequestPartMethodArgumentResolverTests {
 		messageConverter = mock(HttpMessageConverter.class);
 		given(messageConverter.getSupportedMediaTypes()).willReturn(Collections.singletonList(MediaType.TEXT_PLAIN));
 
-		resolver = new RequestPartMethodArgumentResolver(Collections.<HttpMessageConverter<?>>singletonList(messageConverter));
+		resolver = new RequestPartMethodArgumentResolver(Collections.singletonList(messageConverter));
 		reset(messageConverter);
 
 		byte[] content = "doesn't matter as long as not empty".getBytes(StandardCharsets.UTF_8);
@@ -325,11 +326,11 @@ public class RequestPartMethodArgumentResolverTests {
 
 		Object actualValue = resolver.resolveArgument(optionalMultipartFile, null, webRequest, null);
 		assertTrue(actualValue instanceof Optional);
-		assertEquals("Invalid result", expected, ((Optional) actualValue).get());
+		assertEquals("Invalid result", expected, ((Optional<?>) actualValue).get());
 
 		actualValue = resolver.resolveArgument(optionalMultipartFile, null, webRequest, null);
 		assertTrue(actualValue instanceof Optional);
-		assertEquals("Invalid result", expected, ((Optional) actualValue).get());
+		assertEquals("Invalid result", expected, ((Optional<?>) actualValue).get());
 	}
 
 	@Test
@@ -365,11 +366,11 @@ public class RequestPartMethodArgumentResolverTests {
 
 		Object actualValue = resolver.resolveArgument(optionalMultipartFileList, null, webRequest, null);
 		assertTrue(actualValue instanceof Optional);
-		assertEquals("Invalid result", Collections.singletonList(expected), ((Optional) actualValue).get());
+		assertEquals("Invalid result", Collections.singletonList(expected), ((Optional<?>) actualValue).get());
 
 		actualValue = resolver.resolveArgument(optionalMultipartFileList, null, webRequest, null);
 		assertTrue(actualValue instanceof Optional);
-		assertEquals("Invalid result", Collections.singletonList(expected), ((Optional) actualValue).get());
+		assertEquals("Invalid result", Collections.singletonList(expected), ((Optional<?>) actualValue).get());
 	}
 
 	@Test
@@ -407,11 +408,11 @@ public class RequestPartMethodArgumentResolverTests {
 
 		Object actualValue = resolver.resolveArgument(optionalPart, null, webRequest, null);
 		assertTrue(actualValue instanceof Optional);
-		assertEquals("Invalid result", expected, ((Optional) actualValue).get());
+		assertEquals("Invalid result", expected, ((Optional<?>) actualValue).get());
 
 		actualValue = resolver.resolveArgument(optionalPart, null, webRequest, null);
 		assertTrue(actualValue instanceof Optional);
-		assertEquals("Invalid result", expected, ((Optional) actualValue).get());
+		assertEquals("Invalid result", expected, ((Optional<?>) actualValue).get());
 	}
 
 	@Test
@@ -451,11 +452,11 @@ public class RequestPartMethodArgumentResolverTests {
 
 		Object actualValue = resolver.resolveArgument(optionalPartList, null, webRequest, null);
 		assertTrue(actualValue instanceof Optional);
-		assertEquals("Invalid result", Collections.singletonList(expected), ((Optional) actualValue).get());
+		assertEquals("Invalid result", Collections.singletonList(expected), ((Optional<?>) actualValue).get());
 
 		actualValue = resolver.resolveArgument(optionalPartList, null, webRequest, null);
 		assertTrue(actualValue instanceof Optional);
-		assertEquals("Invalid result", Collections.singletonList(expected), ((Optional) actualValue).get());
+		assertEquals("Invalid result", Collections.singletonList(expected), ((Optional<?>) actualValue).get());
 	}
 
 	@Test
@@ -491,7 +492,8 @@ public class RequestPartMethodArgumentResolverTests {
 
 		ModelAndViewContainer mavContainer = new ModelAndViewContainer();
 
-		Object actualValue = resolver.resolveArgument(optionalRequestPart, mavContainer, webRequest, new ValidatingBinderFactory());
+		Object actualValue = resolver.resolveArgument(
+				optionalRequestPart, mavContainer, webRequest, new ValidatingBinderFactory());
 		assertEquals("Invalid argument value", Optional.of(simpleBean), actualValue);
 		assertFalse("The requestHandled flag shouldn't change", mavContainer.isRequestHandled());
 
@@ -557,7 +559,9 @@ public class RequestPartMethodArgumentResolverTests {
 	private final class ValidatingBinderFactory implements WebDataBinderFactory {
 
 		@Override
-		public WebDataBinder createBinder(NativeWebRequest webRequest, Object target, String objectName) throws Exception {
+		public WebDataBinder createBinder(NativeWebRequest webRequest, @Nullable Object target,
+				String objectName) throws Exception {
+
 			LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
 			validator.afterPropertiesSet();
 			WebDataBinder dataBinder = new WebDataBinder(target, objectName);

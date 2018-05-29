@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.springframework.transaction.interceptor;
 
 import java.lang.reflect.Method;
 
+import org.springframework.lang.Nullable;
+
 /**
  * Strategy interface used by {@link TransactionInterceptor} for metadata retrieval.
  *
@@ -25,22 +27,23 @@ import java.lang.reflect.Method;
  * metadata attributes at source level (such as Java 5 annotations), or anywhere else.
  *
  * @author Rod Johnson
+ * @since 15.04.2003
  * @see TransactionInterceptor#setTransactionAttributeSource
  * @see TransactionProxyFactoryBean#setTransactionAttributeSource
  * @see org.springframework.transaction.annotation.AnnotationTransactionAttributeSource
- * @since 15.04.2003
  */
 public interface TransactionAttributeSource {
 
-  /**
-   * Return the transaction attribute for the given method, or {@code null} if the method is
-   * non-transactional.
-   *
-   * @param method the method to introspect
-   * @param targetClass the target class. May be {@code null}, in which case the declaring class of
-   * the method must be used.
-   * @return TransactionAttribute the matching transaction attribute, or {@code null} if none found
-   */
-  TransactionAttribute getTransactionAttribute(Method method, Class<?> targetClass);
+	/**
+	 * Return the transaction attribute for the given method,
+	 * or {@code null} if the method is non-transactional.
+	 * @param method the method to introspect
+	 * @param targetClass the target class (may be {@code null},
+	 * in which case the declaring class of the method must be used)
+	 * @return TransactionAttribute the matching transaction attribute,
+	 * or {@code null} if none found
+	 */
+	@Nullable
+	TransactionAttribute getTransactionAttribute(Method method, @Nullable Class<?> targetClass);
 
 }

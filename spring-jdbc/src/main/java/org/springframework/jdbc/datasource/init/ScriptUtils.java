@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.EncodedResource;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -164,9 +165,9 @@ public abstract class ScriptUtils {
 	 * @param statements the list that will contain the individual statements
 	 * @throws ScriptException if an error occurred while splitting the SQL script
 	 */
-	public static void splitSqlScript(EncodedResource resource, String script, String separator, String commentPrefix,
-			String blockCommentStartDelimiter, String blockCommentEndDelimiter, List<String> statements)
-			throws ScriptException {
+	public static void splitSqlScript(@Nullable EncodedResource resource, String script,
+			String separator, String commentPrefix, String blockCommentStartDelimiter,
+			String blockCommentEndDelimiter, List<String> statements) throws ScriptException {
 
 		Assert.hasText(script, "'script' must not be null or empty");
 		Assert.notNull(separator, "'separator' must not be null");
@@ -178,6 +179,7 @@ public abstract class ScriptUtils {
 		boolean inSingleQuote = false;
 		boolean inDoubleQuote = false;
 		boolean inEscape = false;
+
 		for (int i = 0; i < script.length(); i++) {
 			char c = script.charAt(i);
 			if (inEscape) {
@@ -209,7 +211,7 @@ public abstract class ScriptUtils {
 				}
 				else if (script.startsWith(commentPrefix, i)) {
 					// Skip over any content from the start of the comment to the EOL
-					int indexOfNextNewline = script.indexOf("\n", i);
+					int indexOfNextNewline = script.indexOf('\n', i);
 					if (indexOfNextNewline > i) {
 						i = indexOfNextNewline;
 						continue;
@@ -243,6 +245,7 @@ public abstract class ScriptUtils {
 			}
 			sb.append(c);
 		}
+
 		if (StringUtils.hasText(sb)) {
 			statements.add(sb.toString());
 		}
@@ -273,8 +276,8 @@ public abstract class ScriptUtils {
 	 * @return a {@code String} containing the script lines
 	 * @throws IOException in case of I/O errors
 	 */
-	private static String readScript(EncodedResource resource, String commentPrefix, String separator)
-			throws IOException {
+	private static String readScript(EncodedResource resource, @Nullable String commentPrefix,
+			@Nullable String separator) throws IOException {
 
 		LineNumberReader lnr = new LineNumberReader(resource.getReader());
 		try {
@@ -300,8 +303,8 @@ public abstract class ScriptUtils {
 	 * @return a {@code String} containing the script lines
 	 * @throws IOException in case of I/O errors
 	 */
-	public static String readScript(LineNumberReader lineNumberReader, String commentPrefix, String separator)
-			throws IOException {
+	public static String readScript(LineNumberReader lineNumberReader, @Nullable String commentPrefix,
+			@Nullable String separator) throws IOException {
 
 		String currentStatement = lineNumberReader.readLine();
 		StringBuilder scriptBuilder = new StringBuilder();
@@ -318,7 +321,7 @@ public abstract class ScriptUtils {
 		return scriptBuilder.toString();
 	}
 
-	private static void appendSeparatorToScriptIfNecessary(StringBuilder scriptBuilder, String separator) {
+	private static void appendSeparatorToScriptIfNecessary(StringBuilder scriptBuilder, @Nullable String separator) {
 		if (separator == null) {
 			return;
 		}
@@ -433,8 +436,8 @@ public abstract class ScriptUtils {
 	 * @see org.springframework.jdbc.datasource.DataSourceUtils#releaseConnection
 	 */
 	public static void executeSqlScript(Connection connection, EncodedResource resource, boolean continueOnError,
-			boolean ignoreFailedDrops, String commentPrefix, String separator, String blockCommentStartDelimiter,
-			String blockCommentEndDelimiter) throws ScriptException {
+			boolean ignoreFailedDrops, String commentPrefix, @Nullable String separator,
+			String blockCommentStartDelimiter, String blockCommentEndDelimiter) throws ScriptException {
 
 		try {
 			if (logger.isInfoEnabled()) {

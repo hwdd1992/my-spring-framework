@@ -29,7 +29,7 @@ import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
-import org.springframework.messaging.support.ChannelInterceptorAdapter;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
@@ -173,8 +173,8 @@ public class HandlersBeanDefinitionParserTests {
 		assertThat(defaultSockJsService.getTaskScheduler(), instanceOf(ThreadPoolTaskScheduler.class));
 		assertFalse(defaultSockJsService.shouldSuppressCors());
 
-		Map<TransportType, TransportHandler> transportHandlers = defaultSockJsService.getTransportHandlers();
-		assertThat(transportHandlers.values(),
+		Map<TransportType, TransportHandler> handlerMap = defaultSockJsService.getTransportHandlers();
+		assertThat(handlerMap.values(),
 				containsInAnyOrder(
 						instanceOf(XhrPollingTransportHandler.class),
 						instanceOf(XhrReceivingTransportHandler.class),
@@ -185,11 +185,12 @@ public class HandlersBeanDefinitionParserTests {
 						instanceOf(HtmlFileTransportHandler.class),
 						instanceOf(WebSocketTransportHandler.class)));
 
-		WebSocketTransportHandler handler = (WebSocketTransportHandler) transportHandlers.get(TransportType.WEBSOCKET);
+		WebSocketTransportHandler handler = (WebSocketTransportHandler) handlerMap.get(TransportType.WEBSOCKET);
 		assertEquals(TestHandshakeHandler.class, handler.getHandshakeHandler().getClass());
 
 		List<HandshakeInterceptor> interceptors = defaultSockJsService.getHandshakeInterceptors();
-		assertThat(interceptors, contains(instanceOf(FooTestInterceptor.class), instanceOf(BarTestInterceptor.class), instanceOf(OriginHandshakeInterceptor.class)));
+		assertThat(interceptors, contains(instanceOf(FooTestInterceptor.class),
+				instanceOf(BarTestInterceptor.class), instanceOf(OriginHandshakeInterceptor.class)));
 	}
 
 	@Test
@@ -288,7 +289,7 @@ class TestHandshakeHandler implements HandshakeHandler {
 }
 
 
-class TestChannelInterceptor extends ChannelInterceptorAdapter {
+class TestChannelInterceptor implements ChannelInterceptor {
 }
 
 

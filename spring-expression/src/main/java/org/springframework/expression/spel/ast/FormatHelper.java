@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,15 @@ package org.springframework.expression.spel.ast;
 import java.util.List;
 
 import org.springframework.core.convert.TypeDescriptor;
+import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 
 /**
- * Utility methods (formatters, etc) used during parsing and evaluation.
+ * Utility methods (formatters etc) used during parsing and evaluation.
  *
  * @author Andy Clement
  */
-public class FormatHelper {
+abstract class FormatHelper {
 
 	/**
 	 * Produce a readable representation for a given method name with specified arguments.
@@ -60,7 +61,7 @@ public class FormatHelper {
 	 * @return a formatted String suitable for message inclusion
 	 * @see ClassUtils#getQualifiedName(Class)
 	 */
-	public static String formatClassNameForMessage(Class<?> clazz) {
+	public static String formatClassNameForMessage(@Nullable Class<?> clazz) {
 		return (clazz != null ? ClassUtils.getQualifiedName(clazz) : "null");
 	}
 

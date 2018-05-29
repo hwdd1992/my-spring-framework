@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.springframework.jdbc.support;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.sql.Blob;
 import java.sql.Clob;
@@ -36,6 +35,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.lang.Nullable;
 import org.springframework.util.NumberUtils;
 
 /**
@@ -61,7 +61,7 @@ public abstract class JdbcUtils {
 	 * This is useful for typical finally blocks in manual JDBC code.
 	 * @param con the JDBC Connection to close (may be {@code null})
 	 */
-	public static void closeConnection(Connection con) {
+	public static void closeConnection(@Nullable Connection con) {
 		if (con != null) {
 			try {
 				con.close();
@@ -81,7 +81,7 @@ public abstract class JdbcUtils {
 	 * This is useful for typical finally blocks in manual JDBC code.
 	 * @param stmt the JDBC Statement to close (may be {@code null})
 	 */
-	public static void closeStatement(Statement stmt) {
+	public static void closeStatement(@Nullable Statement stmt) {
 		if (stmt != null) {
 			try {
 				stmt.close();
@@ -101,7 +101,7 @@ public abstract class JdbcUtils {
 	 * This is useful for typical finally blocks in manual JDBC code.
 	 * @param rs the JDBC ResultSet to close (may be {@code null})
 	 */
-	public static void closeResultSet(ResultSet rs) {
+	public static void closeResultSet(@Nullable ResultSet rs) {
 		if (rs != null) {
 			try {
 				rs.close();
@@ -131,7 +131,8 @@ public abstract class JdbcUtils {
 	 * @throws SQLException if thrown by the JDBC API
 	 * @see #getResultSetValue(ResultSet, int)
 	 */
-	public static Object getResultSetValue(ResultSet rs, int index, Class<?> requiredType) throws SQLException {
+	@Nullable
+	public static Object getResultSetValue(ResultSet rs, int index, @Nullable Class<?> requiredType) throws SQLException {
 		if (requiredType == null) {
 			return getResultSetValue(rs, index);
 		}
@@ -259,6 +260,7 @@ public abstract class JdbcUtils {
 	 * @see java.sql.Clob
 	 * @see java.sql.Timestamp
 	 */
+	@Nullable
 	public static Object getResultSetValue(ResultSet rs, int index) throws SQLException {
 		Object obj = rs.getObject(index);
 		String className = null;
@@ -294,19 +296,19 @@ public abstract class JdbcUtils {
 	}
 
 	/**
-	 * Extract database meta data via the given DatabaseMetaDataCallback.
-	 * <p>This method will open a connection to the database and retrieve the database metadata.
+	 * Extract database meta-data via the given DatabaseMetaDataCallback.
+	 * <p>This method will open a connection to the database and retrieve the database meta-data.
 	 * Since this method is called before the exception translation feature is configured for
 	 * a datasource, this method can not rely on the SQLException translation functionality.
 	 * <p>Any exceptions will be wrapped in a MetaDataAccessException. This is a checked exception
 	 * and any calling code should catch and handle this exception. You can just log the
 	 * error and hope for the best, but there is probably a more serious error that will
 	 * reappear when you try to access the database again.
-	 * @param dataSource the DataSource to extract metadata for
+	 * @param dataSource the DataSource to extract meta-data for
 	 * @param action callback that will do the actual work
 	 * @return object containing the extracted information, as returned by
 	 * the DatabaseMetaDataCallback's {@code processMetaData} method
-	 * @throws MetaDataAccessException if meta data access failed
+	 * @throws MetaDataAccessException if meta-data access failed
 	 */
 	public static Object extractDatabaseMetaData(DataSource dataSource, DatabaseMetaDataCallback action)
 			throws MetaDataAccessException {
@@ -314,10 +316,6 @@ public abstract class JdbcUtils {
 		Connection con = null;
 		try {
 			con = DataSourceUtils.getConnection(dataSource);
-			if (con == null) {
-				// should only happen in test environments
-				throw new MetaDataAccessException("Connection returned by DataSource [" + dataSource + "] was null");
-			}
 			DatabaseMetaData metaData = con.getMetaData();
 			if (metaData == null) {
 				// should only happen in test environments
@@ -326,7 +324,7 @@ public abstract class JdbcUtils {
 			return action.processMetaData(metaData);
 		}
 		catch (CannotGetJdbcConnectionException ex) {
-			throw new MetaDataAccessException("Could not get Connection for extracting meta data", ex);
+			throw new MetaDataAccessException("Could not get Connection for extracting meta-data", ex);
 		}
 		catch (SQLException ex) {
 			throw new MetaDataAccessException("Error while extracting DatabaseMetaData", ex);
@@ -343,39 +341,36 @@ public abstract class JdbcUtils {
 	/**
 	 * Call the specified method on DatabaseMetaData for the given DataSource,
 	 * and extract the invocation result.
-	 * @param dataSource the DataSource to extract meta data for
+	 * @param dataSource the DataSource to extract meta-data for
 	 * @param metaDataMethodName the name of the DatabaseMetaData method to call
 	 * @return the object returned by the specified DatabaseMetaData method
 	 * @throws MetaDataAccessException if we couldn't access the DatabaseMetaData
 	 * or failed to invoke the specified method
 	 * @see java.sql.DatabaseMetaData
 	 */
-	public static Object extractDatabaseMetaData(DataSource dataSource, final String metaDataMethodName)
+	@SuppressWarnings("unchecked")
+	public static <T> T extractDatabaseMetaData(DataSource dataSource, final String metaDataMethodName)
 			throws MetaDataAccessException {
 
-		return extractDatabaseMetaData(dataSource,
-				new DatabaseMetaDataCallback() {
-					@Override
-					public Object processMetaData(DatabaseMetaData dbmd) throws SQLException, MetaDataAccessException {
-						try {
-							Method method = DatabaseMetaData.class.getMethod(metaDataMethodName, (Class[]) null);
-							return method.invoke(dbmd, (Object[]) null);
+		return (T) extractDatabaseMetaData(dataSource,
+				dbmd -> {
+					try {
+						return DatabaseMetaData.class.getMethod(metaDataMethodName).invoke(dbmd);
+					}
+					catch (NoSuchMethodException ex) {
+						throw new MetaDataAccessException("No method named '" + metaDataMethodName +
+								"' found on DatabaseMetaData instance [" + dbmd + "]", ex);
+					}
+					catch (IllegalAccessException ex) {
+						throw new MetaDataAccessException(
+								"Could not access DatabaseMetaData method '" + metaDataMethodName + "'", ex);
+					}
+					catch (InvocationTargetException ex) {
+						if (ex.getTargetException() instanceof SQLException) {
+							throw (SQLException) ex.getTargetException();
 						}
-						catch (NoSuchMethodException ex) {
-							throw new MetaDataAccessException("No method named '" + metaDataMethodName +
-									"' found on DatabaseMetaData instance [" + dbmd + "]", ex);
-						}
-						catch (IllegalAccessException ex) {
-							throw new MetaDataAccessException(
-									"Could not access DatabaseMetaData method '" + metaDataMethodName + "'", ex);
-						}
-						catch (InvocationTargetException ex) {
-							if (ex.getTargetException() instanceof SQLException) {
-								throw (SQLException) ex.getTargetException();
-							}
-							throw new MetaDataAccessException(
-									"Invocation of DatabaseMetaData method '" + metaDataMethodName + "' failed", ex);
-						}
+						throw new MetaDataAccessException(
+								"Invocation of DatabaseMetaData method '" + metaDataMethodName + "' failed", ex);
 					}
 				});
 	}
@@ -411,11 +406,13 @@ public abstract class JdbcUtils {
 	}
 
 	/**
-	 * Extract a common name for the database in use even if various drivers/platforms provide varying names.
-	 * @param source the name as provided in database metadata
-	 * @return the common name to be used
+	 * Extract a common name for the target database in use even if
+	 * various drivers/platforms provide varying names at runtime.
+	 * @param source the name as provided in database meta-data
+	 * @return the common name to be used (e.g. "DB2" or "Sybase")
 	 */
-	public static String commonDatabaseName(String source) {
+	@Nullable
+	public static String commonDatabaseName(@Nullable String source) {
 		String name = source;
 		if (source != null && source.startsWith("DB2")) {
 			name = "DB2";
@@ -435,10 +432,10 @@ public abstract class JdbcUtils {
 	 * @return whether the type is numeric
 	 */
 	public static boolean isNumeric(int sqlType) {
-		return Types.BIT == sqlType || Types.BIGINT == sqlType || Types.DECIMAL == sqlType ||
+		return (Types.BIT == sqlType || Types.BIGINT == sqlType || Types.DECIMAL == sqlType ||
 				Types.DOUBLE == sqlType || Types.FLOAT == sqlType || Types.INTEGER == sqlType ||
 				Types.NUMERIC == sqlType || Types.REAL == sqlType || Types.SMALLINT == sqlType ||
-				Types.TINYINT == sqlType;
+				Types.TINYINT == sqlType);
 	}
 
 	/**
@@ -449,7 +446,7 @@ public abstract class JdbcUtils {
 	 * <p><i>columnLabel - the label for the column specified with the SQL AS clause.
 	 * If the SQL AS clause was not specified, then the label is the name of the column</i>.
 	 * @return the column name to use
-	 * @param resultSetMetaData the current meta data to use
+	 * @param resultSetMetaData the current meta-data to use
 	 * @param columnIndex the index of the column for the look up
 	 * @throws SQLException in case of lookup failure
 	 */
@@ -462,33 +459,33 @@ public abstract class JdbcUtils {
 	}
 
 	/**
-	 * Convert a column name with underscores to the corresponding property name using "camel case".  A name
-	 * like "customer_number" would match a "customerNumber" property name.
+	 * Convert a column name with underscores to the corresponding property name using "camel case".
+	 * A name like "customer_number" would match a "customerNumber" property name.
 	 * @param name the column name to be converted
 	 * @return the name using "camel case"
 	 */
-	public static String convertUnderscoreNameToPropertyName(String name) {
+	public static String convertUnderscoreNameToPropertyName(@Nullable String name) {
 		StringBuilder result = new StringBuilder();
 		boolean nextIsUpper = false;
 		if (name != null && name.length() > 0) {
-			if (name.length() > 1 && name.substring(1, 2).equals("_")) {
-				result.append(name.substring(0, 1).toUpperCase());
+			if (name.length() > 1 && name.charAt(1) == '_') {
+				result.append(Character.toUpperCase(name.charAt(0)));
 			}
 			else {
-				result.append(name.substring(0, 1).toLowerCase());
+				result.append(Character.toLowerCase(name.charAt(0)));
 			}
 			for (int i = 1; i < name.length(); i++) {
-				String s = name.substring(i, i + 1);
-				if (s.equals("_")) {
+				char c = name.charAt(i);
+				if (c == '_') {
 					nextIsUpper = true;
 				}
 				else {
 					if (nextIsUpper) {
-						result.append(s.toUpperCase());
+						result.append(Character.toUpperCase(c));
 						nextIsUpper = false;
 					}
 					else {
-						result.append(s.toLowerCase());
+						result.append(Character.toLowerCase(c));
 					}
 				}
 			}

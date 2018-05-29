@@ -52,6 +52,7 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
    * register an AutoProxyCreator} with the container as necessary.
    */
   @Override
+  @Nullable
   public BeanDefinition parse(Element element, ParserContext parserContext) {
     /*
     注册Class为TransactionalEventListenerFactory.class,

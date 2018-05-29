@@ -27,7 +27,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
 import org.springframework.core.NestedIOException;
-import org.springframework.util.Assert;
+import org.springframework.lang.Nullable;
 import org.springframework.util.ResourceUtils;
 
 /**
@@ -125,8 +125,10 @@ public abstract class AbstractResource implements Resource {
 	}
 
 	/**
-	 * This implementation returns {@link Channels#newChannel(InputStream)} with the result of
-	 * {@link #getInputStream()}.
+	 * This implementation returns {@link Channels#newChannel(InputStream)}
+	 * with the result of {@link #getInputStream()}.
+	 * <p>This is the same as in {@link Resource}'s corresponding default method
+	 * but mirrored here for efficient JVM-level dispatching in a class hierarchy.
 	 */
 	@Override
 	public ReadableByteChannel readableChannel() throws IOException {
@@ -138,12 +140,10 @@ public abstract class AbstractResource implements Resource {
 	 * content length. Subclasses will almost always be able to provide
 	 * a more optimal version of this, e.g. checking a File length.
 	 * @see #getInputStream()
-	 * @throws IllegalStateException if {@link #getInputStream()} returns null.
 	 */
 	@Override
 	public long contentLength() throws IOException {
 		InputStream is = getInputStream();
-		Assert.state(is != null, "Resource InputStream must not be null");
 		try {
 			long size = 0;
 			byte[] buf = new byte[255];
@@ -203,6 +203,7 @@ public abstract class AbstractResource implements Resource {
 	 * assuming that this resource type does not have a filename.
 	 */
 	@Override
+	@Nullable
 	public String getFilename() {
 		return null;
 	}

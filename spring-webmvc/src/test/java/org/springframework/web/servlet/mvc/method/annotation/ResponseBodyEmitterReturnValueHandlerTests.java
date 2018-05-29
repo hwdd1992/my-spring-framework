@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.web.servlet.mvc.method.annotation;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -175,6 +177,25 @@ public class ResponseBodyEmitterReturnValueHandlerTests {
 		verify(asyncWebRequest).startAsync();
 	}
 
+	@SuppressWarnings("unchecked")
+	@Test
+	public void responseBodyEmitterWithErrorValue() throws Exception {
+
+		AsyncWebRequest asyncWebRequest = mock(AsyncWebRequest.class);
+		WebAsyncUtils.getAsyncManager(this.request).setAsyncWebRequest(asyncWebRequest);
+
+		ResponseBodyEmitter emitter = new ResponseBodyEmitter(19000L);
+		emitter.onError(mock(Consumer.class));
+		emitter.onCompletion(mock(Runnable.class));
+
+		MethodParameter type = on(TestController.class).resolveReturnType(ResponseBodyEmitter.class);
+		this.handler.handleReturnValue(emitter, type, this.mavContainer, this.webRequest);
+
+		verify(asyncWebRequest).addErrorHandler(any(Consumer.class));
+		verify(asyncWebRequest, times(2)).addCompletionHandler(any(Runnable.class));
+		verify(asyncWebRequest).startAsync();
+	}
+
 	@Test
 	public void sseEmitter() throws Exception {
 		MethodParameter type = on(TestController.class).resolveReturnType(SseEmitter.class);
@@ -286,7 +307,7 @@ public class ResponseBodyEmitterReturnValueHandlerTests {
 
 		private ResponseEntity<AtomicReference<String>> h6() { return null; }
 
-		private ResponseEntity h7() { return null; }
+		private ResponseEntity<?> h7() { return null; }
 
 		private Flux<String> h8() { return null; }
 
@@ -295,6 +316,7 @@ public class ResponseBodyEmitterReturnValueHandlerTests {
 	}
 
 
+	@SuppressWarnings("unused")
 	private static class SimpleBean {
 
 		private Long id;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 import org.springframework.core.io.Resource;
+import org.springframework.lang.Nullable;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -59,9 +60,7 @@ public class MediaTypeFactory {
 	 * @return a multi-value map, mapping media types to file extensions.
 	 */
 	private static MultiValueMap<String, MediaType> parseMimeTypes() {
-		InputStream is = null;
-		try {
-			is = MediaTypeFactory.class.getResourceAsStream(MIME_TYPES_FILE_NAME);
+		try (InputStream is = MediaTypeFactory.class.getResourceAsStream(MIME_TYPES_FILE_NAME)) {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.US_ASCII));
 			MultiValueMap<String, MediaType> result = new LinkedMultiValueMap<>();
 			String line;
@@ -81,15 +80,6 @@ public class MediaTypeFactory {
 		catch (IOException ex) {
 			throw new IllegalStateException("Could not load '" + MIME_TYPES_FILE_NAME + "'", ex);
 		}
-		finally {
-			if (is != null) {
-				try {
-					is.close();
-				}
-				catch (IOException ignore) {
-				}
-			}
-		}
 	}
 
 	/**
@@ -97,7 +87,7 @@ public class MediaTypeFactory {
 	 * @param resource the resource to introspect
 	 * @return the corresponding media type, or {@code null} if none found
 	 */
-	public static Optional<MediaType> getMediaType(Resource resource) {
+	public static Optional<MediaType> getMediaType(@Nullable Resource resource) {
 		return Optional.ofNullable(resource)
 				.map(Resource::getFilename)
 				.flatMap(MediaTypeFactory::getMediaType);
@@ -108,7 +98,7 @@ public class MediaTypeFactory {
 	 * @param filename the file name plus extension
 	 * @return the corresponding media type, or {@code null} if none found
 	 */
-	public static Optional<MediaType> getMediaType(String filename) {
+	public static Optional<MediaType> getMediaType(@Nullable String filename) {
 		return getMediaTypes(filename).stream().findFirst();
 	}
 
@@ -117,7 +107,7 @@ public class MediaTypeFactory {
 	 * @param filename the file name plus extension
 	 * @return the corresponding media types, or an empty list if none found
 	 */
-	public static List<MediaType> getMediaTypes(String filename) {
+	public static List<MediaType> getMediaTypes(@Nullable String filename) {
 		return Optional.ofNullable(StringUtils.getFilenameExtension(filename))
 				.map(s -> s.toLowerCase(Locale.ENGLISH))
 				.map(fileExtensionToMediaTypes::get)

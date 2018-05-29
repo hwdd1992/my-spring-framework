@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.springframework.web.reactive.socket.adapter;
 
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -33,8 +34,8 @@ import org.springframework.web.reactive.socket.WebSocketSession;
 
 
 /**
- * Spring {@link WebSocketSession} implementation that adapts to Reactor Netty's
- * WebSocket {@link NettyInbound} and {@link NettyOutbound}.
+ * {@link WebSocketSession} implementation for use with the Reactor Netty's
+ * {@link NettyInbound} and {@link NettyOutbound}.
  *
  * @author Rossen Stoyanchev
  * @since 5.0
@@ -69,10 +70,8 @@ public class ReactorNettyWebSocketSession
 
 	@Override
 	public Mono<Void> close(CloseStatus status) {
-		return Mono.error(new UnsupportedOperationException(
-				"Currently in Reactor Netty applications are expected to use the " +
-						"Cancellation returned from subscribing to the \"receive\"-side Flux " +
-						"in order to close the WebSocket session."));
+		WebSocketFrame closeFrame = new CloseWebSocketFrame(status.getCode(), status.getReason());
+		return getDelegate().getOutbound().sendObject(closeFrame).then();
 	}
 
 

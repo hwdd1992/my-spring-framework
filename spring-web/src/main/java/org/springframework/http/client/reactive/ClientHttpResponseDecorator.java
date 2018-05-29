@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.http.client.reactive;
 
 import reactor.core.publisher.Flux;
@@ -37,7 +38,7 @@ public class ClientHttpResponseDecorator implements ClientHttpResponse {
 
 
 	public ClientHttpResponseDecorator(ClientHttpResponse delegate) {
-		Assert.notNull(delegate, "ClientHttpResponse delegate is required.");
+		Assert.notNull(delegate, "Delegate is required");
 		this.delegate = delegate;
 	}
 
@@ -49,10 +50,14 @@ public class ClientHttpResponseDecorator implements ClientHttpResponse {
 
 	// ServerHttpResponse delegation methods...
 
-
 	@Override
 	public HttpStatus getStatusCode() {
 		return this.delegate.getStatusCode();
+	}
+
+	@Override
+	public int getRawStatusCode() {
+		return this.delegate.getRawStatusCode();
 	}
 
 	@Override
@@ -69,7 +74,6 @@ public class ClientHttpResponseDecorator implements ClientHttpResponse {
 	public Flux<DataBuffer> getBody() {
 		return this.delegate.getBody();
 	}
-
 
 	@Override
 	public String toString() {

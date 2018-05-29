@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package org.springframework.web.reactive.function.server;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -26,26 +28,29 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpRange;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.HttpMessageReader;
+import org.springframework.http.codec.multipart.Part;
+import org.springframework.http.server.PathContainer;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
-import org.springframework.util.Assert;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyExtractor;
 import org.springframework.web.reactive.function.BodyExtractors;
 import org.springframework.web.reactive.function.UnsupportedMediaTypeException;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 import org.springframework.web.server.WebSession;
+import org.springframework.web.util.UriBuilder;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * {@code ServerRequest} implementation based on a {@link ServerWebExchange}.
@@ -56,28 +61,29 @@ import org.springframework.web.server.WebSession;
 class DefaultServerRequest implements ServerRequest {
 
 	private static final Function<UnsupportedMediaTypeException, UnsupportedMediaTypeStatusException> ERROR_MAPPER =
-			ex -> ex.getContentType()
-					.map(contentType -> new UnsupportedMediaTypeStatusException(contentType,
-							ex.getSupportedMediaTypes()))
-					.orElseGet(() -> new UnsupportedMediaTypeStatusException(ex.getMessage()));
+			ex -> (ex.getContentType() != null ?
+					new UnsupportedMediaTypeStatusException(
+							ex.getContentType(), ex.getSupportedMediaTypes(), ex.getBodyType()) :
+					new UnsupportedMediaTypeStatusException(ex.getMessage()));
+
 
 	private final ServerWebExchange exchange;
 
 	private final Headers headers;
 
-	private final HandlerStrategies strategies;
+	private final List<HttpMessageReader<?>> messageReaders;
 
 
-	DefaultServerRequest(ServerWebExchange exchange, HandlerStrategies strategies) {
+	DefaultServerRequest(ServerWebExchange exchange, List<HttpMessageReader<?>> messageReaders) {
 		this.exchange = exchange;
-		this.strategies = strategies;
+		this.messageReaders = Collections.unmodifiableList(new ArrayList<>(messageReaders));
 		this.headers = new DefaultHeaders();
 	}
 
 
 	@Override
-	public HttpMethod method() {
-		return request().getMethod();
+	public String methodName() {
+		return request().getMethodValue();
 	}
 
 	@Override
@@ -86,8 +92,33 @@ class DefaultServerRequest implements ServerRequest {
 	}
 
 	@Override
+	public UriBuilder uriBuilder() {
+		return UriComponentsBuilder.fromUri(uri());
+	}
+
+	@Override
+	public PathContainer pathContainer() {
+		return request().getPath();
+	}
+
+	@Override
 	public Headers headers() {
 		return this.headers;
+	}
+
+	@Override
+	public MultiValueMap<String, HttpCookie> cookies() {
+		return request().getCookies();
+	}
+
+	@Override
+	public Optional<InetSocketAddress> remoteAddress() {
+		return Optional.ofNullable(request().getRemoteAddress());
+	}
+
+	@Override
+	public List<HttpMessageReader<?>> messageReaders() {
+		return this.messageReaders;
 	}
 
 	@Override
@@ -97,19 +128,16 @@ class DefaultServerRequest implements ServerRequest {
 
 	@Override
 	public <T> T body(BodyExtractor<T, ? super ServerHttpRequest> extractor, Map<String, Object> hints) {
-		Assert.notNull(extractor, "'extractor' must not be null");
 		return extractor.extract(request(),
 				new BodyExtractor.Context() {
 					@Override
-					public Supplier<Stream<HttpMessageReader<?>>> messageReaders() {
-						return DefaultServerRequest.this.strategies.messageReaders();
+					public List<HttpMessageReader<?>> messageReaders() {
+						return messageReaders;
 					}
-
 					@Override
 					public Optional<ServerHttpResponse> serverResponse() {
 						return Optional.of(exchange().getResponse());
 					}
-
 					@Override
 					public Map<String, Object> hints() {
 						return hints;
@@ -124,14 +152,21 @@ class DefaultServerRequest implements ServerRequest {
 	}
 
 	@Override
+	public <T> Mono<T> bodyToMono(ParameterizedTypeReference<T> typeReference) {
+		Mono<T> mono = body(BodyExtractors.toMono(typeReference));
+		return mono.onErrorMap(UnsupportedMediaTypeException.class, ERROR_MAPPER);
+	}
+
+	@Override
 	public <T> Flux<T> bodyToFlux(Class<? extends T> elementClass) {
 		Flux<T> flux = body(BodyExtractors.toFlux(elementClass));
 		return flux.onErrorMap(UnsupportedMediaTypeException.class, ERROR_MAPPER);
 	}
 
 	@Override
-	public <T> Optional<T> attribute(String name) {
-		return this.exchange.getAttribute(name);
+	public <T> Flux<T> bodyToFlux(ParameterizedTypeReference<T> typeReference) {
+		Flux<T> flux = body(BodyExtractors.toFlux(typeReference));
+		return flux.onErrorMap(UnsupportedMediaTypeException.class, ERROR_MAPPER);
 	}
 
 	@Override
@@ -140,15 +175,14 @@ class DefaultServerRequest implements ServerRequest {
 	}
 
 	@Override
-	public List<String> queryParams(String name) {
-		List<String> queryParams = request().getQueryParams().get(name);
-		return queryParams != null ? queryParams : Collections.emptyList();
+	public MultiValueMap<String, String> queryParams() {
+		return request().getQueryParams();
 	}
 
 	@Override
 	public Map<String, String> pathVariables() {
-		return this.exchange.<Map<String, String>>getAttribute(RouterFunctions.URI_TEMPLATE_VARIABLES_ATTRIBUTE).
-				orElseGet(Collections::emptyMap);
+		return this.exchange.getAttributeOrDefault(
+				RouterFunctions.URI_TEMPLATE_VARIABLES_ATTRIBUTE, Collections.emptyMap());
 	}
 
 	@Override
@@ -156,11 +190,27 @@ class DefaultServerRequest implements ServerRequest {
 		return this.exchange.getSession();
 	}
 
+	@Override
+	public Mono<? extends Principal> principal() {
+		return this.exchange.getPrincipal();
+	}
+
+	@Override
+	public Mono<MultiValueMap<String, String>> formData() {
+		return this.exchange.getFormData();
+	}
+
+	@Override
+	public Mono<MultiValueMap<String, Part>> multipartData() {
+		return this.exchange.getMultipartData();
+	}
+
 	private ServerHttpRequest request() {
 		return this.exchange.getRequest();
 	}
 
-	ServerWebExchange exchange() {
+	@Override
+	public ServerWebExchange exchange() {
 		return this.exchange;
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.web.reactive.socket.server.support;
 
-import java.util.Arrays;
+import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -28,10 +31,12 @@ import org.springframework.context.Lifecycle;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.web.reactive.socket.HandshakeInfo;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.server.RequestUpgradeStrategy;
 import org.springframework.web.reactive.socket.server.WebSocketService;
@@ -54,6 +59,8 @@ public class HandshakeWebSocketService implements WebSocketService, Lifecycle {
 
 	private static final String SEC_WEBSOCKET_PROTOCOL = "Sec-WebSocket-Protocol";
 
+	private static final Mono<Map<String, Object>> EMPTY_ATTRIBUTES = Mono.just(Collections.emptyMap());
+
 
 	private static final boolean tomcatPresent = ClassUtils.isPresent(
 			"org.apache.tomcat.websocket.server.WsHttpUpgradeHandler",
@@ -63,12 +70,12 @@ public class HandshakeWebSocketService implements WebSocketService, Lifecycle {
 			"org.eclipse.jetty.websocket.server.WebSocketServerFactory",
 			HandshakeWebSocketService.class.getClassLoader());
 
-	private static final boolean reactorNettyPresent = ClassUtils.isPresent(
-			"reactor.ipc.netty.http.server.HttpServerResponse",
-			HandshakeWebSocketService.class.getClassLoader());
-
 	private static final boolean undertowPresent = ClassUtils.isPresent(
 			"io.undertow.websockets.WebSocketProtocolHandshakeHandler",
+			HandshakeWebSocketService.class.getClassLoader());
+
+	private static final boolean reactorNettyPresent = ClassUtils.isPresent(
+			"reactor.ipc.netty.http.server.HttpServerResponse",
 			HandshakeWebSocketService.class.getClassLoader());
 
 
@@ -76,6 +83,9 @@ public class HandshakeWebSocketService implements WebSocketService, Lifecycle {
 
 
 	private final RequestUpgradeStrategy upgradeStrategy;
+
+	@Nullable
+	private Predicate<String> sessionAttributePredicate;
 
 	private volatile boolean running = false;
 
@@ -93,7 +103,7 @@ public class HandshakeWebSocketService implements WebSocketService, Lifecycle {
 	 * @param upgradeStrategy the strategy to use
 	 */
 	public HandshakeWebSocketService(RequestUpgradeStrategy upgradeStrategy) {
-		Assert.notNull(upgradeStrategy, "'upgradeStrategy' is required");
+		Assert.notNull(upgradeStrategy, "RequestUpgradeStrategy is required");
 		this.upgradeStrategy = upgradeStrategy;
 	}
 
@@ -105,11 +115,12 @@ public class HandshakeWebSocketService implements WebSocketService, Lifecycle {
 		else if (jettyPresent) {
 			className = "JettyRequestUpgradeStrategy";
 		}
-		else if (reactorNettyPresent) {
-			className = "ReactorNettyRequestUpgradeStrategy";
-		}
 		else if (undertowPresent) {
 			className = "UndertowRequestUpgradeStrategy";
+		}
+		else if (reactorNettyPresent) {
+			// As late as possible (Reactor Netty commonly used for WebClient)
+			className = "ReactorNettyRequestUpgradeStrategy";
 		}
 		else {
 			throw new IllegalStateException("No suitable default RequestUpgradeStrategy found");
@@ -134,10 +145,28 @@ public class HandshakeWebSocketService implements WebSocketService, Lifecycle {
 		return this.upgradeStrategy;
 	}
 
-	@Override
-	public boolean isRunning() {
-		return this.running;
+	/**
+	 * Configure a predicate to use to extract
+	 * {@link org.springframework.web.server.WebSession WebSession} attributes
+	 * and use them to initialize the WebSocket session with.
+	 * <p>By default this is not set in which case no attributes are passed.
+	 * @param predicate the predicate
+	 * @since 5.1
+	 */
+	public void setSessionAttributePredicate(@Nullable Predicate<String> predicate) {
+		this.sessionAttributePredicate = predicate;
 	}
+
+	/**
+	 * Return the configured predicate for initialization WebSocket session
+	 * attributes from {@code WebSession} attributes.
+	 * @since 5.1
+	 */
+	@Nullable
+	public Predicate<String> getSessionAttributePredicate() {
+		return this.sessionAttributePredicate;
+	}
+
 
 	@Override
 	public void start() {
@@ -167,10 +196,14 @@ public class HandshakeWebSocketService implements WebSocketService, Lifecycle {
 		}
 	}
 
+	@Override
+	public boolean isRunning() {
+		return this.running;
+	}
+
 
 	@Override
 	public Mono<Void> handleRequest(ServerWebExchange exchange, WebSocketHandler handler) {
-
 		ServerHttpRequest request = exchange.getRequest();
 		HttpMethod method = request.getMethod();
 		HttpHeaders headers = request.getHeaders();
@@ -180,7 +213,8 @@ public class HandshakeWebSocketService implements WebSocketService, Lifecycle {
 		}
 
 		if (HttpMethod.GET != method) {
-			return Mono.error(new MethodNotAllowedException(method, Collections.singleton(HttpMethod.GET)));
+			return Mono.error(new MethodNotAllowedException(
+					request.getMethodValue(), Collections.singleton(HttpMethod.GET)));
 		}
 
 		if (!"WebSocket".equalsIgnoreCase(headers.getUpgrade())) {
@@ -197,8 +231,12 @@ public class HandshakeWebSocketService implements WebSocketService, Lifecycle {
 			return handleBadRequest("Missing \"Sec-WebSocket-Key\" header");
 		}
 
-		Optional<String> protocol = selectProtocol(headers, handler);
-		return this.upgradeStrategy.upgrade(exchange, handler, protocol);
+		String protocol = selectProtocol(headers, handler);
+
+		return initAttributes(exchange).flatMap(attributes ->
+				this.upgradeStrategy.upgrade(exchange, handler, protocol,
+						() -> createHandshakeInfo(exchange, request, protocol, attributes))
+		);
 	}
 
 	private Mono<Void> handleBadRequest(String reason) {
@@ -208,15 +246,35 @@ public class HandshakeWebSocketService implements WebSocketService, Lifecycle {
 		return Mono.error(new ServerWebInputException(reason));
 	}
 
-	private Optional<String> selectProtocol(HttpHeaders headers, WebSocketHandler handler) {
+	@Nullable
+	private String selectProtocol(HttpHeaders headers, WebSocketHandler handler) {
 		String protocolHeader = headers.getFirst(SEC_WEBSOCKET_PROTOCOL);
-		if (protocolHeader == null) {
-			return Optional.empty();
+		if (protocolHeader != null) {
+			List<String> supportedProtocols = handler.getSubProtocols();
+			for (String protocol : StringUtils.commaDelimitedListToStringArray(protocolHeader)) {
+				if (supportedProtocols.contains(protocol)) {
+					return protocol;
+				}
+			}
 		}
-		String[] protocols = handler.getSubProtocols();
-		return StringUtils.commaDelimitedListToSet(protocolHeader).stream()
-				.filter(protocol -> Arrays.stream(protocols).anyMatch(protocol::equals))
-				.findFirst();
+		return null;
+	}
+
+	private Mono<Map<String, Object>> initAttributes(ServerWebExchange exchange) {
+		if (this.sessionAttributePredicate == null) {
+			return EMPTY_ATTRIBUTES;
+		}
+		return exchange.getSession().map(session ->
+				session.getAttributes().entrySet().stream()
+						.filter(entry -> this.sessionAttributePredicate.test(entry.getKey()))
+						.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+	}
+
+	private HandshakeInfo createHandshakeInfo(ServerWebExchange exchange, ServerHttpRequest request,
+			@Nullable String protocol, Map<String, Object> attributes) {
+
+		Mono<Principal> principal = exchange.getPrincipal();
+		return new HandshakeInfo(request.getURI(), request.getHeaders(), principal, protocol, attributes);
 	}
 
 }

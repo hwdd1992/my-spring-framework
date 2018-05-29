@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,18 @@
 
 package org.springframework.web.servlet.resource;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  * A {@link org.springframework.web.servlet.resource.ResourceResolver} that
@@ -43,12 +48,16 @@ public class CachingResourceResolver extends AbstractResourceResolver {
 	private final Cache cache;
 
 
-	public CachingResourceResolver(CacheManager cacheManager, String cacheName) {
-		this(cacheManager.getCache(cacheName));
-	}
-
 	public CachingResourceResolver(Cache cache) {
 		Assert.notNull(cache, "Cache is required");
+		this.cache = cache;
+	}
+
+	public CachingResourceResolver(CacheManager cacheManager, String cacheName) {
+		Cache cache = cacheManager.getCache(cacheName);
+		if (cache == null) {
+			throw new IllegalArgumentException("Cache '" + cacheName + "' not found");
+		}
 		this.cache = cache;
 	}
 
@@ -62,7 +71,7 @@ public class CachingResourceResolver extends AbstractResourceResolver {
 
 
 	@Override
-	protected Resource resolveResourceInternal(HttpServletRequest request, String requestPath,
+	protected Resource resolveResourceInternal(@Nullable HttpServletRequest request, String requestPath,
 			List<? extends Resource> locations, ResourceResolverChain chain) {
 
 		String key = computeKey(request, requestPath);
@@ -86,16 +95,33 @@ public class CachingResourceResolver extends AbstractResourceResolver {
 		return resource;
 	}
 
-	protected String computeKey(HttpServletRequest request, String requestPath) {
+	protected String computeKey(@Nullable HttpServletRequest request, String requestPath) {
 		StringBuilder key = new StringBuilder(RESOLVED_RESOURCE_CACHE_KEY_PREFIX);
 		key.append(requestPath);
 		if (request != null) {
-			String encoding = request.getHeader("Accept-Encoding");
-			if (encoding != null && encoding.contains("gzip")) {
-				key.append("+encoding=gzip");
+			String codingKey = getContentCodingKey(request);
+			if (codingKey != null) {
+				key.append("+encoding=").append(codingKey);
 			}
 		}
 		return key.toString();
+	}
+
+	@Nullable
+	private static String getContentCodingKey(HttpServletRequest request) {
+		String header = request.getHeader(HttpHeaders.ACCEPT_ENCODING);
+		if (!StringUtils.hasText(header)) {
+			return null;
+		}
+		return Arrays.stream(StringUtils.tokenizeToStringArray(header, ","))
+				.map(token -> {
+					int index = token.indexOf(';');
+					return (index >= 0 ? token.substring(0, index) : token).trim().toLowerCase();
+				})
+				.filter(coding -> !coding.equals("*"))
+				.filter(coding -> !coding.equals("identity"))
+				.sorted()
+				.collect(Collectors.joining(","));
 	}
 
 	@Override
