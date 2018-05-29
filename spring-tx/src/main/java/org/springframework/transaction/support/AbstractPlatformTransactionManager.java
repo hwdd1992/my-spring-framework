@@ -347,6 +347,7 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
       definition = new DefaultTransactionDefinition();
     }
 
+    //当前是否有事务检查
     if (isExistingTransaction(transaction)) {
       // Existing transaction found -> check propagation behavior to find out how to behave.
       return handleExistingTransaction(definition, transaction, debugEnabled);
@@ -364,12 +365,14 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
     } else if (definition.getPropagationBehavior() == TransactionDefinition.PROPAGATION_REQUIRED ||
         definition.getPropagationBehavior() == TransactionDefinition.PROPAGATION_REQUIRES_NEW ||
         definition.getPropagationBehavior() == TransactionDefinition.PROPAGATION_NESTED) {
+      //挂起当前事务
       SuspendedResourcesHolder suspendedResources = suspend(null);
       if (debugEnabled) {
         logger.debug(
             "Creating new transaction with name [" + definition.getName() + "]: " + definition);
       }
       try {
+        //事务同步,通过DefaultTransactionStatus管理
         boolean newSynchronization = (getTransactionSynchronization() != SYNCHRONIZATION_NEVER);
         DefaultTransactionStatus status = newTransactionStatus(definition, transaction
             , true, newSynchronization, debugEnabled, suspendedResources);

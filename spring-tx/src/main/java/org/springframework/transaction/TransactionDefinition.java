@@ -132,7 +132,8 @@ public interface TransactionDefinition {
    * specific transaction managers. Out of the box, this only applies to the JDBC {@link
    * org.springframework.jdbc.datasource.DataSourceTransactionManager} when working on a JDBC 3.0
    * driver. Some JTA providers might support nested transactions as well.
-   *<p>如果当前有事务,则在嵌套事务内执行.否则和 PROPAGATION_REQUIRED 一样创建新的事务.</p>
+   * <p>如果当前有事务,则在嵌套事务内执行.否则和 PROPAGATION_REQUIRED 一样创建新的事务.</p>
+   *
    * @see org.springframework.jdbc.datasource.DataSourceTransactionManager
    */
   int PROPAGATION_NESTED = 6;

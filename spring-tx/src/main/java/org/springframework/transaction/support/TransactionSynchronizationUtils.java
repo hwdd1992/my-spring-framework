@@ -107,8 +107,8 @@ public abstract class TransactionSynchronizationUtils {
    * @see TransactionSynchronization#beforeCompletion()
    */
   public static void triggerBeforeCompletion() {
-    for (TransactionSynchronization synchronization : TransactionSynchronizationManager
-        .getSynchronizations()) {
+    for (TransactionSynchronization synchronization :
+        TransactionSynchronizationManager.getSynchronizations()) {
       try {
         synchronization.beforeCompletion();
       } catch (Throwable tsex) {
