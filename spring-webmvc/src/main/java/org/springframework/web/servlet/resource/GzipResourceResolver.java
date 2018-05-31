@@ -115,7 +115,8 @@ public class GzipResourceResolver extends AbstractResourceResolver {
 			return this.gzipped.getFile();
 		}
 
-		public long contentLength() throws IOException {
+		@Override
+    public long contentLength() throws IOException {
 			return this.gzipped.contentLength();
 		}
 
