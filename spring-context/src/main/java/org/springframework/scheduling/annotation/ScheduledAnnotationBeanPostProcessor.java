@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,12 @@
 package org.springframework.scheduling.annotation;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
@@ -30,6 +32,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -53,6 +56,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.core.MethodIntrospector;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.config.CronTask;
@@ -207,9 +211,11 @@ public class ScheduledAnnotationBeanPostProcessor
 		}
 
 		if (this.beanFactory instanceof ListableBeanFactory) {
-			Map<String, SchedulingConfigurer> configurers =
+			Map<String, SchedulingConfigurer> beans =
 					((ListableBeanFactory) this.beanFactory).getBeansOfType(SchedulingConfigurer.class);
-			for (SchedulingConfigurer configurer : configurers.values()) {
+			List<SchedulingConfigurer> configurers = new ArrayList<SchedulingConfigurer>(beans.values());
+			AnnotationAwareOrderComparator.sort(configurers);
+			for (SchedulingConfigurer configurer : configurers) {
 				configurer.configureTasks(this.registrar);
 			}
 		}
@@ -221,6 +227,7 @@ public class ScheduledAnnotationBeanPostProcessor
 				this.registrar.setTaskScheduler(resolveSchedulerBean(TaskScheduler.class, false));
 			}
 			catch (NoUniqueBeanDefinitionException ex) {
+				logger.debug("Could not find unique TaskScheduler bean", ex);
 				try {
 					this.registrar.setTaskScheduler(resolveSchedulerBean(TaskScheduler.class, true));
 				}
@@ -241,6 +248,7 @@ public class ScheduledAnnotationBeanPostProcessor
 					this.registrar.setScheduler(resolveSchedulerBean(ScheduledExecutorService.class, false));
 				}
 				catch (NoUniqueBeanDefinitionException ex2) {
+					logger.debug("Could not find unique ScheduledExecutorService bean", ex2);
 					try {
 						this.registrar.setScheduler(resolveSchedulerBean(ScheduledExecutorService.class, true));
 					}
@@ -299,7 +307,7 @@ public class ScheduledAnnotationBeanPostProcessor
 
 	@Override
 	public Object postProcessAfterInitialization(final Object bean, String beanName) {
-		Class<?> targetClass = AopUtils.getTargetClass(bean);
+		Class<?> targetClass = AopProxyUtils.ultimateTargetClass(bean);
 		if (!this.nonAnnotatedClasses.contains(targetClass)) {
 			Map<Method, Set<Scheduled>> annotatedMethods = MethodIntrospector.selectMethods(targetClass,
 					new MethodIntrospector.MetadataLookup<Set<Scheduled>>() {

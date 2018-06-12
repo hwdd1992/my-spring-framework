@@ -268,8 +268,8 @@ public class DefaultStompSession implements ConnectionHandlingStompSession {
 	}
 
 	private void execute(Message<byte[]> message) {
-		StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 		if (logger.isTraceEnabled()) {
+			StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 			logger.trace("Sending " + accessor.getDetailedLogMessage(message.getPayload()));
 		}
 		TcpConnection<byte[]> conn = this.connection;
@@ -670,7 +670,7 @@ public class DefaultStompSession implements ConnectionHandlingStompSession {
 		@Override
 		public void run() {
 			closing = true;
-			String error = "Server has gone quite. Closing connection in session id=" + sessionId + ".";
+			String error = "Server has gone quiet. Closing connection in session id=" + sessionId + ".";
 			if (logger.isDebugEnabled()) {
 				logger.debug(error);
 			}

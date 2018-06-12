@@ -35,19 +35,19 @@ import org.springframework.util.ConcurrentReferenceHashMap;
 import org.springframework.util.ReflectionUtils;
 
 /**
- * Internal utility class that can be used to obtain wrapped {@link Serializable} variants
- * of {@link java.lang.reflect.Type}s.
+ * Internal utility class that can be used to obtain wrapped {@link Serializable}
+ * variants of {@link java.lang.reflect.Type}s.
  *
  * <p>{@link #forField(Field) Fields} or {@link #forMethodParameter(MethodParameter)
- * MethodParameters} can be used as the root source for a serializable type. Alternatively
- * the {@link #forGenericSuperclass(Class) superclass},
+ * MethodParameters} can be used as the root source for a serializable type.
+ * Alternatively the {@link #forGenericSuperclass(Class) superclass},
  * {@link #forGenericInterfaces(Class) interfaces} or {@link #forTypeParameters(Class)
  * type parameters} or a regular {@link Class} can also be used as source.
  *
  * <p>The returned type will either be a {@link Class} or a serializable proxy of
  * {@link GenericArrayType}, {@link ParameterizedType}, {@link TypeVariable} or
- * {@link WildcardType}. With the exception of {@link Class} (which is final) calls to
- * methods that return further {@link Type}s (for example
+ * {@link WildcardType}. With the exception of {@link Class} (which is final) calls
+ * to methods that return further {@link Type}s (for example
  * {@link GenericArrayType#getGenericComponentType()}) will be automatically wrapped.
  *
  * @author Phillip Webb
@@ -59,8 +59,7 @@ abstract class SerializableTypeWrapper {
 	private static final Class<?>[] SUPPORTED_SERIALIZABLE_TYPES = {
 			GenericArrayType.class, ParameterizedType.class, TypeVariable.class, WildcardType.class};
 
-	private static final ConcurrentReferenceHashMap<Type, Type> cache =
-			new ConcurrentReferenceHashMap<Type, Type>(256);
+	static final ConcurrentReferenceHashMap<Type, Type> cache = new ConcurrentReferenceHashMap<Type, Type>(256);
 
 
 	/**
@@ -84,7 +83,7 @@ abstract class SerializableTypeWrapper {
 	 */
 	@SuppressWarnings("serial")
 	public static Type forGenericSuperclass(final Class<?> type) {
-		return forTypeProvider(new DefaultTypeProvider() {
+		return forTypeProvider(new SimpleTypeProvider() {
 			@Override
 			public Type getType() {
 				return type.getGenericSuperclass();
@@ -100,7 +99,7 @@ abstract class SerializableTypeWrapper {
 		Type[] result = new Type[type.getGenericInterfaces().length];
 		for (int i = 0; i < result.length; i++) {
 			final int index = i;
-			result[i] = forTypeProvider(new DefaultTypeProvider() {
+			result[i] = forTypeProvider(new SimpleTypeProvider() {
 				@Override
 				public Type getType() {
 					return type.getGenericInterfaces()[index];
@@ -118,7 +117,7 @@ abstract class SerializableTypeWrapper {
 		Type[] result = new Type[type.getTypeParameters().length];
 		for (int i = 0; i < result.length; i++) {
 			final int index = i;
-			result[i] = forTypeProvider(new DefaultTypeProvider() {
+			result[i] = forTypeProvider(new SimpleTypeProvider() {
 				@Override
 				public Type getType() {
 					return type.getTypeParameters()[index];
@@ -198,10 +197,10 @@ abstract class SerializableTypeWrapper {
 
 
 	/**
-	 * Default implementation of {@link TypeProvider} with a {@code null} source.
+	 * Base implementation of {@link TypeProvider} with a {@code null} source.
 	 */
 	@SuppressWarnings("serial")
-	private static abstract class DefaultTypeProvider implements TypeProvider {
+	private static abstract class SimpleTypeProvider implements TypeProvider {
 
 		@Override
 		public Object getSource() {

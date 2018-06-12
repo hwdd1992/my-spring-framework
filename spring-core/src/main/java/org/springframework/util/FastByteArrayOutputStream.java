@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -404,12 +404,6 @@ public class FastByteArrayOutputStream extends OutputStream {
 			else if (len == 0) {
 				return 0;
 			}
-			else if (len < 0) {
-				throw new IllegalArgumentException("len must be 0 or greater: " + len);
-			}
-			else if (off < 0) {
-				throw new IllegalArgumentException("off must be 0 or greater: " + off);
-			}
 			else {
 				if (this.currentBuffer == null) {
 					// This stream doesn't have any data in it...
@@ -495,6 +489,7 @@ public class FastByteArrayOutputStream extends OutputStream {
 		 * Update the message digest with the remaining bytes in this stream.
 		 * @param messageDigest The message digest to update
 		 */
+		@Override
 		public void updateMessageDigest(MessageDigest messageDigest) {
 			updateMessageDigest(messageDigest, available());
 		}
@@ -505,6 +500,7 @@ public class FastByteArrayOutputStream extends OutputStream {
 		 * @param messageDigest The message digest to update
 		 * @param len how many bytes to read from this stream and use to update the message digest
 		 */
+		@Override
 		public void updateMessageDigest(MessageDigest messageDigest, int len) {
 			if (this.currentBuffer == null) {
 				// This stream doesn't have any data in it...

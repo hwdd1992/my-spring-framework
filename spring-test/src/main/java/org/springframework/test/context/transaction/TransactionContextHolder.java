@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,24 +26,22 @@ import org.springframework.core.NamedInheritableThreadLocal;
  */
 class TransactionContextHolder {
 
-	private static final ThreadLocal<TransactionContext> currentTransactionContext = new NamedInheritableThreadLocal<TransactionContext>(
-		"Test Transaction Context");
+	private static final ThreadLocal<TransactionContext> currentTransactionContext =
+			new NamedInheritableThreadLocal<TransactionContext>("Test Transaction Context");
 
-
-	static TransactionContext getCurrentTransactionContext() {
-		return currentTransactionContext.get();
-	}
 
 	static void setCurrentTransactionContext(TransactionContext transactionContext) {
 		currentTransactionContext.set(transactionContext);
 	}
 
+	static TransactionContext getCurrentTransactionContext() {
+		return currentTransactionContext.get();
+	}
+
 	static TransactionContext removeCurrentTransactionContext() {
-		synchronized (currentTransactionContext) {
-			TransactionContext transactionContext = currentTransactionContext.get();
-			currentTransactionContext.remove();
-			return transactionContext;
-		}
+		TransactionContext transactionContext = currentTransactionContext.get();
+		currentTransactionContext.remove();
+		return transactionContext;
 	}
 
 }

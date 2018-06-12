@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import javax.servlet.http.HttpServletRequest;
 
@@ -94,6 +93,14 @@ public class UrlPathHelper {
 	 */
 	public void setUrlDecode(boolean urlDecode) {
 		this.urlDecode = urlDecode;
+	}
+
+	/**
+	 * Whether to decode the request URI when determining the lookup path.
+	 * @since 4.3.13
+	 */
+	public boolean isUrlDecode() {
+		return this.urlDecode;
 	}
 
 	/**
@@ -252,10 +259,7 @@ public class UrlPathHelper {
 				}
 				c1 = requestUri.charAt(index1);
 			}
-			if (c1 == c2) {
-				continue;
-			}
-			else if (ignoreCase && (Character.toLowerCase(c1) == Character.toLowerCase(c2))) {
+			if (c1 == c2 || (ignoreCase && (Character.toLowerCase(c1) == Character.toLowerCase(c2)))) {
 				continue;
 			}
 			return null;
@@ -527,7 +531,7 @@ public class UrlPathHelper {
 		}
 		else {
 			Map<String, String> decodedVars = new LinkedHashMap<String, String>(vars.size());
-			for (Entry<String, String> entry : vars.entrySet()) {
+			for (Map.Entry<String, String> entry : vars.entrySet()) {
 				decodedVars.put(entry.getKey(), decodeInternal(request, entry.getValue()));
 			}
 			return decodedVars;

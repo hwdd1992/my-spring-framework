@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,24 +46,24 @@ public abstract class VfsUtils {
 	private static final String VFS3_PKG = "org.jboss.vfs.";
 	private static final String VFS_NAME = "VFS";
 
-	private static Method VFS_METHOD_GET_ROOT_URL = null;
-	private static Method VFS_METHOD_GET_ROOT_URI = null;
+	private static final Method VFS_METHOD_GET_ROOT_URL;
+	private static final Method VFS_METHOD_GET_ROOT_URI;
 
-	private static Method VIRTUAL_FILE_METHOD_EXISTS = null;
-	private static Method VIRTUAL_FILE_METHOD_GET_INPUT_STREAM;
-	private static Method VIRTUAL_FILE_METHOD_GET_SIZE;
-	private static Method VIRTUAL_FILE_METHOD_GET_LAST_MODIFIED;
-	private static Method VIRTUAL_FILE_METHOD_TO_URL;
-	private static Method VIRTUAL_FILE_METHOD_TO_URI;
-	private static Method VIRTUAL_FILE_METHOD_GET_NAME;
-	private static Method VIRTUAL_FILE_METHOD_GET_PATH_NAME;
-	private static Method VIRTUAL_FILE_METHOD_GET_CHILD;
+	private static final Method VIRTUAL_FILE_METHOD_EXISTS;
+	private static final Method VIRTUAL_FILE_METHOD_GET_INPUT_STREAM;
+	private static final Method VIRTUAL_FILE_METHOD_GET_SIZE;
+	private static final Method VIRTUAL_FILE_METHOD_GET_LAST_MODIFIED;
+	private static final Method VIRTUAL_FILE_METHOD_TO_URL;
+	private static final Method VIRTUAL_FILE_METHOD_TO_URI;
+	private static final Method VIRTUAL_FILE_METHOD_GET_NAME;
+	private static final Method VIRTUAL_FILE_METHOD_GET_PATH_NAME;
+	private static final Method VIRTUAL_FILE_METHOD_GET_CHILD;
 
-	protected static Class<?> VIRTUAL_FILE_VISITOR_INTERFACE;
-	protected static Method VIRTUAL_FILE_METHOD_VISIT;
+	protected static final Class<?> VIRTUAL_FILE_VISITOR_INTERFACE;
+	protected static final Method VIRTUAL_FILE_METHOD_VISIT;
 
-	private static Field VISITOR_ATTRIBUTES_FIELD_RECURSE = null;
-	private static Method GET_PHYSICAL_FILE = null;
+	private static final Field VISITOR_ATTRIBUTES_FIELD_RECURSE;
+	private static final Method GET_PHYSICAL_FILE;
 
 	static {
 		ClassLoader loader = VfsUtils.class.getClassLoader();
@@ -90,7 +90,7 @@ public abstract class VfsUtils {
 			Class<?> visitorAttributesClass = loader.loadClass(VFS3_PKG + "VisitorAttributes");
 			VISITOR_ATTRIBUTES_FIELD_RECURSE = ReflectionUtils.findField(visitorAttributesClass, "RECURSE");
 		}
-		catch (ClassNotFoundException ex) {
+		catch (Throwable ex) {
 			throw new IllegalStateException("Could not detect JBoss VFS infrastructure", ex);
 		}
 	}

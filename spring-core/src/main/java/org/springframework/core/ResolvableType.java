@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.util.Map;
 import org.springframework.core.SerializableTypeWrapper.FieldTypeProvider;
 import org.springframework.core.SerializableTypeWrapper.MethodParameterTypeProvider;
 import org.springframework.core.SerializableTypeWrapper.TypeProvider;
+import org.springframework.lang.UsesJava8;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ConcurrentReferenceHashMap;
@@ -355,7 +356,7 @@ public class ResolvableType implements Serializable {
 		if (this == NONE) {
 			return false;
 		}
-		return (((this.type instanceof Class && ((Class<?>) this.type).isArray())) ||
+		return ((this.type instanceof Class && ((Class<?>) this.type).isArray()) ||
 				this.type instanceof GenericArrayType || resolveType().isArray());
 	}
 
@@ -1309,6 +1310,19 @@ public class ResolvableType implements Serializable {
 		return forType(type, variableResolver);
 	}
 
+
+	/**
+	 * Return a {@link ResolvableType} for the specified {@link ParameterizedTypeReference}.
+	 * Note: The resulting {@link ResolvableType} may not be {@link Serializable}.
+	 * @param typeReference the reference to obtain the source type from
+	 * @return a {@link ResolvableType} for the specified {@link ParameterizedTypeReference}
+	 * @since 4.3.12
+	 * @see #forType(Type)
+	 */
+	public static ResolvableType forType(ParameterizedTypeReference<?> typeReference) {
+		return forType(typeReference.getType(), null, null);
+	}
+
 	/**
 	 * Return a {@link ResolvableType} for the specified {@link Type} backed by a given
 	 * {@link VariableResolver}.
@@ -1356,11 +1370,12 @@ public class ResolvableType implements Serializable {
 	}
 
 	/**
-	 * Clear the internal {@code ResolvableType} cache.
+	 * Clear the internal {@code ResolvableType}/{@code SerializableTypeWrapper} cache.
 	 * @since 4.2
 	 */
 	public static void clearCache() {
 		cache.clear();
+		SerializableTypeWrapper.cache.clear();
 	}
 
 
@@ -1413,8 +1428,9 @@ public class ResolvableType implements Serializable {
 		@Override
 		public ResolvableType resolveVariable(TypeVariable<?> variable) {
 			for (int i = 0; i < this.variables.length; i++) {
-				if (SerializableTypeWrapper.unwrap(this.variables[i]).equals(
-						SerializableTypeWrapper.unwrap(variable))) {
+				TypeVariable<?> v1 = SerializableTypeWrapper.unwrap(this.variables[i]);
+				TypeVariable<?> v2 = SerializableTypeWrapper.unwrap(variable);
+				if (ObjectUtils.nullSafeEquals(v1, v2)) {
 					return this.generics[i];
 				}
 			}
@@ -1437,6 +1453,23 @@ public class ResolvableType implements Serializable {
 		public SyntheticParameterizedType(Type rawType, Type[] typeArguments) {
 			this.rawType = rawType;
 			this.typeArguments = typeArguments;
+		}
+
+		@Override  // on Java 8
+		@UsesJava8
+		public String getTypeName() {
+			StringBuilder result = new StringBuilder(this.rawType.getTypeName());
+			if (this.typeArguments.length > 0) {
+				result.append('<');
+				for (int i = 0; i < this.typeArguments.length; i++) {
+					if (i > 0) {
+						result.append(", ");
+					}
+					result.append(this.typeArguments[i].getTypeName());
+				}
+				result.append('>');
+			}
+			return result.toString();
 		}
 
 		@Override
@@ -1544,7 +1577,7 @@ public class ResolvableType implements Serializable {
 			}
 			WildcardType wildcardType = (WildcardType) resolveToWildcard.type;
 			Kind boundsType = (wildcardType.getLowerBounds().length > 0 ? Kind.LOWER : Kind.UPPER);
-			Type[] bounds = boundsType == Kind.UPPER ? wildcardType.getUpperBounds() : wildcardType.getLowerBounds();
+			Type[] bounds = (boundsType == Kind.UPPER ? wildcardType.getUpperBounds() : wildcardType.getLowerBounds());
 			ResolvableType[] resolvableBounds = new ResolvableType[bounds.length];
 			for (int i = 0; i < bounds.length; i++) {
 				resolvableBounds[i] = ResolvableType.forType(bounds[i], type.variableResolver);

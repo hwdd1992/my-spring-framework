@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -223,16 +223,25 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
 
 	@Override
 	public V get(Object key) {
-		Reference<K, V> reference = getReference(key, Restructure.WHEN_NECESSARY);
-		Entry<K, V> entry = (reference != null ? reference.get() : null);
+		Entry<K, V> entry = getEntryIfAvailable(key);
 		return (entry != null ? entry.getValue() : null);
 	}
 
 	@Override
+	public V getOrDefault(Object key, V defaultValue) {
+		Entry<K, V> entry = getEntryIfAvailable(key);
+		return (entry != null ? entry.getValue() : defaultValue);
+	}
+
+	@Override
 	public boolean containsKey(Object key) {
-		Reference<K, V> reference = getReference(key, Restructure.WHEN_NECESSARY);
-		Entry<K, V> entry = (reference != null ? reference.get() : null);
+		Entry<K, V> entry = getEntryIfAvailable(key);
 		return (entry != null && ObjectUtils.nullSafeEquals(entry.getKey(), key));
+	}
+
+	private Entry<K, V> getEntryIfAvailable(Object key) {
+		Reference<K, V> reference = getReference(key, Restructure.WHEN_NECESSARY);
+		return (reference != null ? reference.get() : null);
 	}
 
 	/**
@@ -419,9 +428,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
 		private final int initialSize;
 
 		/**
-		 * Array of references indexed using the low order bits from the hash. This
-		 * property should only be set via {@link #setReferences} to ensure that the
-		 * {@code resizeThreshold} is maintained.
+		 * Array of references indexed using the low order bits from the hash.
+		 * This property should only be set along with {@code resizeThreshold}.
 		 */
 		private volatile Reference<K, V>[] references;
 
@@ -583,17 +591,18 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
 		}
 
 		private Reference<K, V> findInChain(Reference<K, V> reference, Object key, int hash) {
-			while (reference != null) {
-				if (reference.getHash() == hash) {
-					Entry<K, V> entry = reference.get();
+			Reference<K, V> currRef = reference;
+			while (currRef != null) {
+				if (currRef.getHash() == hash) {
+					Entry<K, V> entry = currRef.get();
 					if (entry != null) {
 						K entryKey = entry.getKey();
-						if (entryKey == key || entryKey.equals(key)) {
-							return reference;
+						if (ObjectUtils.nullSafeEquals(entryKey, key)) {
+							return currRef;
 						}
 					}
 				}
-				reference = reference.getNext();
+				currRef = currRef.getNext();
 			}
 			return null;
 		}
@@ -617,14 +626,14 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
 		}
 
 		/**
-		 * @return the size of the current references array
+		 * Return the size of the current references array.
 		 */
 		public final int getSize() {
 			return this.references.length;
 		}
 
 		/**
-		 * @return the total number of references in this segment
+		 * Return the total number of references in this segment.
 		 */
 		public final int getCount() {
 			return this.count;
@@ -639,21 +648,17 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
 	protected interface Reference<K, V> {
 
 		/**
-		 * Returns the referenced entry or {@code null} if the entry is no longer
-		 * available.
-		 * @return the entry or {@code null}
+		 * Return the referenced entry, or {@code null} if the entry is no longer available.
 		 */
 		Entry<K, V> get();
 
 		/**
-		 * Returns the hash for the reference.
-		 * @return the hash
+		 * Return the hash for the reference.
 		 */
 		int getHash();
 
 		/**
-		 * Returns the next reference in the chain or {@code null}
-		 * @return the next reference of {@code null}
+		 * Return the next reference in the chain, or {@code null} if none.
 		 */
 		Reference<K, V> getNext();
 
@@ -930,7 +935,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
 		 * Factory method used to create a new {@link Reference}.
 		 * @param entry the entry contained in the reference
 		 * @param hash the hash
-		 * @param next the next reference in the chain or {@code null}
+		 * @param next the next reference in the chain, or {@code null} if none
 		 * @return a new {@link Reference}
 		 */
 		public Reference<K, V> createReference(Entry<K, V> entry, int hash, Reference<K, V> next) {

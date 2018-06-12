@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -419,7 +419,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 					RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
 					// Only check bean definition if it is complete.
 					if (!mbd.isAbstract() && (allowEagerInit ||
-							((mbd.hasBeanClass() || !mbd.isLazyInit() || isAllowEagerClassLoading())) &&
+							(mbd.hasBeanClass() || !mbd.isLazyInit() || isAllowEagerClassLoading()) &&
 									!requiresEagerInitForType(mbd.getFactoryBeanName()))) {
 						// In case of FactoryBean, match object created by FactoryBean.
 						boolean isFactoryBean = isFactoryBean(beanName, mbd);
@@ -553,7 +553,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				results.add(beanName);
 			}
 		}
-		return results.toArray(new String[results.size()]);
+		return StringUtils.toStringArray(results);
 	}
 
 	@Override
@@ -1009,7 +1009,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				}
 			}
 			if (!autowireCandidates.isEmpty()) {
-				candidateNames = autowireCandidates.toArray(new String[autowireCandidates.size()]);
+				candidateNames = StringUtils.toStringArray(autowireCandidates);
 			}
 		}
 
@@ -1100,7 +1100,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 			Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);
 			if (matchingBeans.isEmpty()) {
-				if (descriptor.isRequired()) {
+				if (isRequired(descriptor)) {
 					raiseNoMatchingBeanFound(type, descriptor.getResolvableType(), descriptor);
 				}
 				return null;
@@ -1112,7 +1112,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			if (matchingBeans.size() > 1) {
 				autowiredBeanName = determineAutowireCandidate(matchingBeans, descriptor);
 				if (autowiredBeanName == null) {
-					if (descriptor.isRequired() || !indicatesMultipleBeans(type)) {
+					if (isRequired(descriptor) || !indicatesMultipleBeans(type)) {
 						return descriptor.resolveNotUnique(type, matchingBeans);
 					}
 					else {
@@ -1215,6 +1215,13 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		else {
 			return null;
 		}
+	}
+
+	private boolean isRequired(DependencyDescriptor descriptor) {
+		AutowireCandidateResolver resolver = getAutowireCandidateResolver();
+		return (resolver instanceof SimpleAutowireCandidateResolver ?
+				((SimpleAutowireCandidateResolver) resolver).isRequired(descriptor) :
+				descriptor.isRequired());
 	}
 
 	private boolean indicatesMultipleBeans(Class<?> type) {
@@ -1569,7 +1576,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				}
 			}
 			// Lenient fallback: dummy factory in case of original factory not found...
-			return new StaticListableBeanFactory(Collections.<String, Object> emptyMap());
+			return new DefaultListableBeanFactory();
 		}
 	}
 
@@ -1735,7 +1742,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			if (targetType != null && targetType != obj.getClass()) {
 				sources.add(targetType);
 			}
-			return sources.toArray(new Object[sources.size()]);
+			return sources.toArray();
 		}
 
 		private RootBeanDefinition getRootBeanDefinition(String beanName) {

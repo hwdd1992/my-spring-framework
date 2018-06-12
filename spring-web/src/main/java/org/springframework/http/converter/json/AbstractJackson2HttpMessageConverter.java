@@ -155,9 +155,6 @@ public abstract class AbstractJackson2HttpMessageConverter extends AbstractGener
 			return false;
 		}
 		JavaType javaType = getJavaType(type, contextClass);
-		if (!logger.isWarnEnabled()) {
-			return this.objectMapper.canDeserialize(javaType);
-		}
 		AtomicReference<Throwable> causeRef = new AtomicReference<Throwable>();
 		if (this.objectMapper.canDeserialize(javaType, causeRef)) {
 			return true;
@@ -170,9 +167,6 @@ public abstract class AbstractJackson2HttpMessageConverter extends AbstractGener
 	public boolean canWrite(Class<?> clazz, MediaType mediaType) {
 		if (!canWrite(mediaType)) {
 			return false;
-		}
-		if (!logger.isWarnEnabled()) {
-			return this.objectMapper.canSerialize(clazz);
 		}
 		AtomicReference<Throwable> causeRef = new AtomicReference<Throwable>();
 		if (this.objectMapper.canSerialize(clazz, causeRef)) {
@@ -191,10 +185,20 @@ public abstract class AbstractJackson2HttpMessageConverter extends AbstractGener
 	 * @since 4.3
 	 */
 	protected void logWarningIfNecessary(Type type, Throwable cause) {
-		if (cause != null && !(cause instanceof JsonMappingException && cause.getMessage().startsWith("Can not find"))) {
+		if (cause == null) {
+			return;
+		}
+
+		boolean debugLevel = (cause instanceof JsonMappingException &&
+				cause.getMessage().startsWith("Can not find"));
+
+		if (debugLevel ? logger.isDebugEnabled() : logger.isWarnEnabled()) {
 			String msg = "Failed to evaluate Jackson " + (type instanceof JavaType ? "de" : "") +
 					"serialization for type [" + type + "]";
-			if (logger.isDebugEnabled()) {
+			if (debugLevel) {
+				logger.debug(msg, cause);
+			}
+			else if (logger.isDebugEnabled()) {
 				logger.warn(msg, cause);
 			}
 			else {
@@ -230,8 +234,11 @@ public abstract class AbstractJackson2HttpMessageConverter extends AbstractGener
 			}
 			return this.objectMapper.readValue(inputMessage.getBody(), javaType);
 		}
+		catch (JsonProcessingException ex) {
+			throw new HttpMessageNotReadableException("JSON parse error: " + ex.getOriginalMessage(), ex);
+		}
 		catch (IOException ex) {
-			throw new HttpMessageNotReadableException("Could not read JSON document: " + ex.getMessage(), ex);
+			throw new HttpMessageNotReadableException("I/O error while reading input message", ex);
 		}
 	}
 
@@ -283,7 +290,7 @@ public abstract class AbstractJackson2HttpMessageConverter extends AbstractGener
 
 		}
 		catch (JsonProcessingException ex) {
-			throw new HttpMessageNotWritableException("Could not write JSON document: " + ex.getMessage(), ex);
+			throw new HttpMessageNotWritableException("Could not write JSON: " + ex.getOriginalMessage(), ex);
 		}
 	}
 

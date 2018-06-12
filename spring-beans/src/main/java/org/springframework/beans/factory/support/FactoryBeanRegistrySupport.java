@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,6 +109,11 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 					}
 					else {
 						if (object != null && shouldPostProcess) {
+							if (isSingletonCurrentlyInCreation(beanName)) {
+								// Temporarily return non-post-processed object, not storing it yet..
+								return object;
+							}
+							beforeSingletonCreation(beanName);
 							try {
 								object = postProcessObjectFromFactoryBean(object, beanName);
 							}
@@ -116,8 +121,13 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 								throw new BeanCreationException(beanName,
 										"Post-processing of FactoryBean's singleton object failed", ex);
 							}
+							finally {
+								afterSingletonCreation(beanName);
+							}
 						}
-						this.factoryBeanObjectCache.put(beanName, (object != null ? object : NULL_OBJECT));
+						if (containsSingleton(beanName)) {
+							this.factoryBeanObjectCache.put(beanName, (object != null ? object : NULL_OBJECT));
+						}
 					}
 				}
 				return (object != NULL_OBJECT ? object : null);
@@ -218,12 +228,25 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 	 */
 	@Override
 	protected void removeSingleton(String beanName) {
-		super.removeSingleton(beanName);
-		this.factoryBeanObjectCache.remove(beanName);
+		synchronized (getSingletonMutex()) {
+			super.removeSingleton(beanName);
+			this.factoryBeanObjectCache.remove(beanName);
+		}
 	}
 
 	/**
-	 * Returns the security context for this bean factory. If a security manager
+	 * Overridden to clear the FactoryBean object cache as well.
+	 */
+	@Override
+	protected void clearSingletonCache() {
+		synchronized (getSingletonMutex()) {
+			super.clearSingletonCache();
+			this.factoryBeanObjectCache.clear();
+		}
+	}
+
+	/**
+	 * Return the security context for this bean factory. If a security manager
 	 * is set, interaction with the user code will be executed using the privileged
 	 * of the security context returned by this method.
 	 * @see AccessController#getContext()

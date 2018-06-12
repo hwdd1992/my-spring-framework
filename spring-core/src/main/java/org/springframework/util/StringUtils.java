@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,7 +114,7 @@ public abstract class StringUtils {
 	 * @see #hasText(String)
 	 */
 	public static boolean hasLength(String str) {
-		return hasLength((CharSequence) str);
+		return (str != null && !str.isEmpty());
 	}
 
 	/**
@@ -135,17 +135,7 @@ public abstract class StringUtils {
 	 * @see Character#isWhitespace
 	 */
 	public static boolean hasText(CharSequence str) {
-		if (!hasLength(str)) {
-			return false;
-		}
-
-		int strLen = str.length();
-		for (int i = 0; i < strLen; i++) {
-			if (!Character.isWhitespace(str.charAt(i))) {
-				return true;
-			}
-		}
-		return false;
+		return (hasLength(str) && containsText(str));
 	}
 
 	/**
@@ -159,7 +149,17 @@ public abstract class StringUtils {
 	 * @see #hasText(CharSequence)
 	 */
 	public static boolean hasText(String str) {
-		return hasText((CharSequence) str);
+		return (hasLength(str) && containsText(str));
+	}
+
+	private static boolean containsText(CharSequence str) {
+		int strLen = str.length();
+		for (int i = 0; i < strLen; i++) {
+			if (!Character.isWhitespace(str.charAt(i))) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -310,7 +310,6 @@ public abstract class StringUtils {
 		return sb.toString();
 	}
 
-
 	/**
 	 * Test if the given {@code String} starts with the specified prefix,
 	 * ignoring upper/lower case.
@@ -319,19 +318,8 @@ public abstract class StringUtils {
 	 * @see java.lang.String#startsWith
 	 */
 	public static boolean startsWithIgnoreCase(String str, String prefix) {
-		if (str == null || prefix == null) {
-			return false;
-		}
-		if (str.startsWith(prefix)) {
-			return true;
-		}
-		if (str.length() < prefix.length()) {
-			return false;
-		}
-
-		String lcStr = str.substring(0, prefix.length()).toLowerCase();
-		String lcPrefix = prefix.toLowerCase();
-		return lcStr.equals(lcPrefix);
+		return (str != null && prefix != null && str.length() >= prefix.length() &&
+				str.regionMatches(true, 0, prefix, 0, prefix.length()));
 	}
 
 	/**
@@ -342,19 +330,8 @@ public abstract class StringUtils {
 	 * @see java.lang.String#endsWith
 	 */
 	public static boolean endsWithIgnoreCase(String str, String suffix) {
-		if (str == null || suffix == null) {
-			return false;
-		}
-		if (str.endsWith(suffix)) {
-			return true;
-		}
-		if (str.length() < suffix.length()) {
-			return false;
-		}
-
-		String lcStr = str.substring(str.length() - suffix.length()).toLowerCase();
-		String lcSuffix = suffix.toLowerCase();
-		return lcStr.equals(lcSuffix);
+		return (str != null && suffix != null && str.length() >= suffix.length() &&
+				str.regionMatches(true, str.length() - suffix.length(), suffix, 0, suffix.length()));
 	}
 
 	/**
@@ -365,9 +342,11 @@ public abstract class StringUtils {
 	 * @param substring the substring to match at the given index
 	 */
 	public static boolean substringMatch(CharSequence str, int index, CharSequence substring) {
-		for (int j = 0; j < substring.length(); j++) {
-			int i = index + j;
-			if (i >= str.length() || str.charAt(i) != substring.charAt(j)) {
+		if (index + substring.length() > str.length()) {
+			return false;
+		}
+		for (int i = 0; i < substring.length(); i++) {
+			if (str.charAt(index + i) != substring.charAt(i)) {
 				return false;
 			}
 		}
@@ -376,8 +355,8 @@ public abstract class StringUtils {
 
 	/**
 	 * Count the occurrences of the substring {@code sub} in string {@code str}.
-	 * @param str string to search in. Return 0 if this is {@code null}.
-	 * @param sub string to search for. Return 0 if this is {@code null}.
+	 * @param str string to search in
+	 * @param sub string to search for
 	 */
 	public static int countOccurrencesOf(String str, String sub) {
 		if (!hasLength(str) || !hasLength(sub)) {
@@ -395,8 +374,7 @@ public abstract class StringUtils {
 	}
 
 	/**
-	 * Replace all occurrences of a substring within a string with
-	 * another string.
+	 * Replace all occurrences of a substring within a string with another string.
 	 * @param inString {@code String} to examine
 	 * @param oldPattern {@code String} to replace
 	 * @param newPattern {@code String} to insert
@@ -513,9 +491,8 @@ public abstract class StringUtils {
 	 * Capitalize a {@code String}, changing the first letter to
 	 * upper case as per {@link Character#toUpperCase(char)}.
 	 * No other letters are changed.
-	 * @param str the {@code String} to capitalize, may be {@code null}
-	 * @return the capitalized {@code String}, or {@code null} if the supplied
-	 * string is {@code null}
+	 * @param str the {@code String} to capitalize
+	 * @return the capitalized {@code String}
 	 */
 	public static String capitalize(String str) {
 		return changeFirstCharacterCase(str, true);
@@ -525,9 +502,8 @@ public abstract class StringUtils {
 	 * Uncapitalize a {@code String}, changing the first letter to
 	 * lower case as per {@link Character#toLowerCase(char)}.
 	 * No other letters are changed.
-	 * @param str the {@code String} to uncapitalize, may be {@code null}
-	 * @return the uncapitalized {@code String}, or {@code null} if the supplied
-	 * string is {@code null}
+	 * @param str the {@code String} to uncapitalize
+	 * @return the uncapitalized {@code String}
 	 */
 	public static String uncapitalize(String str) {
 		return changeFirstCharacterCase(str, false);
@@ -597,9 +573,8 @@ public abstract class StringUtils {
 	/**
 	 * Strip the filename extension from the given Java resource path,
 	 * e.g. "mypath/myfile.txt" -> "mypath/myfile".
-	 * @param path the file path (may be {@code null})
-	 * @return the path with stripped filename extension,
-	 * or {@code null} if none
+	 * @param path the file path
+	 * @return the path with stripped filename extension
 	 */
 	public static String stripFilenameExtension(String path) {
 		if (path == null) {
@@ -659,7 +634,7 @@ public abstract class StringUtils {
 		// first path element. This is necessary to correctly parse paths like
 		// "file:core/../core/io/Resource.class", where the ".." should just
 		// strip the first "core" directory while keeping the "file:" prefix.
-		int prefixIndex = pathToUse.indexOf(":");
+		int prefixIndex = pathToUse.indexOf(':');
 		String prefix = "";
 		if (prefixIndex != -1) {
 			prefix = pathToUse.substring(0, prefixIndex + 1);
@@ -719,12 +694,12 @@ public abstract class StringUtils {
 	}
 
 	/**
-	 * Parse the given {@code localeString} value into a {@link Locale}.
+	 * Parse the given {@code String} representation into a {@link Locale}.
 	 * <p>This is the inverse operation of {@link Locale#toString Locale's toString}.
-	 * @param localeString the locale {@code String}, following {@code Locale's}
-	 * {@code toString()} format ("en", "en_UK", etc);
-	 * also accepts spaces as separators, as an alternative to underscores
-	 * @return a corresponding {@code Locale} instance
+	 * @param localeString the locale {@code String}: following {@code Locale's}
+	 * {@code toString()} format ("en", "en_UK", etc), also accepting spaces as
+	 * separators (as an alternative to underscores)
+	 * @return a corresponding {@code Locale} instance, or {@code null} if none
 	 * @throws IllegalArgumentException in case of an invalid locale specification
 	 */
 	public static Locale parseLocaleString(String localeString) {
@@ -840,7 +815,10 @@ public abstract class StringUtils {
 	 * @param array1 the first array (can be {@code null})
 	 * @param array2 the second array (can be {@code null})
 	 * @return the new array ({@code null} if both given arrays were {@code null})
+	 * @deprecated as of 4.3.15, in favor of manual merging via {@link LinkedHashSet}
+	 * (with every entry included at most once, even entries within the first array)
 	 */
+	@Deprecated
 	public static String[] mergeStringArrays(String[] array1, String[] array2) {
 		if (ObjectUtils.isEmpty(array1)) {
 			return array2;
@@ -877,14 +855,12 @@ public abstract class StringUtils {
 	 * Copy the given {@code Collection} into a {@code String} array.
 	 * <p>The {@code Collection} must contain {@code String} elements only.
 	 * @param collection the {@code Collection} to copy
-	 * @return the {@code String} array ({@code null} if the supplied
-	 * {@code Collection} was {@code null})
+	 * @return the {@code String} array
 	 */
 	public static String[] toStringArray(Collection<String> collection) {
 		if (collection == null) {
 			return null;
 		}
-
 		return collection.toArray(new String[collection.size()]);
 	}
 
@@ -892,16 +868,13 @@ public abstract class StringUtils {
 	 * Copy the given Enumeration into a {@code String} array.
 	 * The Enumeration must contain {@code String} elements only.
 	 * @param enumeration the Enumeration to copy
-	 * @return the {@code String} array ({@code null} if the passed-in
-	 * Enumeration was {@code null})
+	 * @return the {@code String} array
 	 */
 	public static String[] toStringArray(Enumeration<String> enumeration) {
 		if (enumeration == null) {
 			return null;
 		}
-
-		List<String> list = Collections.list(enumeration);
-		return list.toArray(new String[list.size()]);
+		return toStringArray(Collections.list(enumeration));
 	}
 
 	/**
@@ -966,10 +939,9 @@ public abstract class StringUtils {
 
 	/**
 	 * Take an array of strings and split each element based on the given delimiter.
-	 * A {@code Properties} instance is then generated, with the left of the
-	 * delimiter providing the key, and the right of the delimiter providing the value.
-	 * <p>Will trim both the key and value before adding them to the
-	 * {@code Properties} instance.
+	 * A {@code Properties} instance is then generated, with the left of the delimiter
+	 * providing the key, and the right of the delimiter providing the value.
+	 * <p>Will trim both the key and value before adding them to the {@code Properties}.
 	 * @param array the array to process
 	 * @param delimiter to split each element using (typically the equals symbol)
 	 * @return a {@code Properties} instance representing the array contents,
@@ -1048,8 +1020,7 @@ public abstract class StringUtils {
 	 * @param ignoreEmptyTokens omit empty tokens from the result array
 	 * (only applies to tokens that are empty after trimming; StringTokenizer
 	 * will not consider subsequent delimiters as token in the first place).
-	 * @return an array of the tokens ({@code null} if the input {@code String}
-	 * was {@code null})
+	 * @return an array of the tokens
 	 * @see java.util.StringTokenizer
 	 * @see String#trim()
 	 * @see #delimitedListToStringArray
