@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -429,6 +429,7 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 		if (logger.isDebugEnabled()) {
 			logger.debug("Executing SQL statement [" + sql + "]");
 		}
+
 		class ExecuteStatementCallback implements StatementCallback<Object>, SqlProvider {
 			@Override
 			public Object doInStatement(Statement stmt) throws SQLException {
@@ -440,6 +441,7 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 				return sql;
 			}
 		}
+
 		execute(new ExecuteStatementCallback());
 	}
 
@@ -450,6 +452,7 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 		if (logger.isDebugEnabled()) {
 			logger.debug("Executing SQL query [" + sql + "]");
 		}
+
 		class QueryStatementCallback implements StatementCallback<T>, SqlProvider {
 			@Override
 			public T doInStatement(Statement stmt) throws SQLException {
@@ -471,6 +474,7 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 				return sql;
 			}
 		}
+
 		return execute(new QueryStatementCallback());
 	}
 
@@ -521,6 +525,7 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 		if (logger.isDebugEnabled()) {
 			logger.debug("Executing SQL update [" + sql + "]");
 		}
+
 		class UpdateStatementCallback implements StatementCallback<Integer>, SqlProvider {
 			@Override
 			public Integer doInStatement(Statement stmt) throws SQLException {
@@ -535,6 +540,7 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 				return sql;
 			}
 		}
+
 		return execute(new UpdateStatementCallback());
 	}
 
@@ -1267,11 +1273,14 @@ public class JdbcTemplate extends JdbcAccessor implements JdbcOperations {
 	 * @param param the corresponding stored procedure parameter
 	 * @return Map that contains returned results
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	protected Map<String, Object> processResultSet(ResultSet rs, ResultSetSupportingSqlParameter param) throws SQLException {
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	protected Map<String, Object> processResultSet(ResultSet rs, ResultSetSupportingSqlParameter param)
+			throws SQLException {
+
 		if (rs == null) {
 			return Collections.emptyMap();
 		}
+
 		Map<String, Object> returnedResults = new HashMap<String, Object>();
 		try {
 			ResultSet rsToUse = rs;

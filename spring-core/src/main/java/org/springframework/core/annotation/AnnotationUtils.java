@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -145,24 +145,24 @@ public abstract class AnnotationUtils {
 	 * <p>Note that this method supports only a single level of meta-annotations.
 	 * For support for arbitrary levels of meta-annotations, use one of the
 	 * {@code find*()} methods instead.
-	 * @param ann the Annotation to check
+	 * @param annotation the Annotation to check
 	 * @param annotationType the annotation type to look for, both locally and as a meta-annotation
 	 * @return the first matching annotation, or {@code null} if not found
 	 * @since 4.0
 	 */
 	@SuppressWarnings("unchecked")
-	public static <A extends Annotation> A getAnnotation(Annotation ann, Class<A> annotationType) {
-		if (annotationType.isInstance(ann)) {
-			return synthesizeAnnotation((A) ann);
+	public static <A extends Annotation> A getAnnotation(Annotation annotation, Class<A> annotationType) {
+		if (annotationType.isInstance(annotation)) {
+			return synthesizeAnnotation((A) annotation);
 		}
-		Class<? extends Annotation> annotatedElement = ann.annotationType();
+		Class<? extends Annotation> annotatedElement = annotation.annotationType();
 		try {
 			return synthesizeAnnotation(annotatedElement.getAnnotation(annotationType), annotatedElement);
 		}
 		catch (Throwable ex) {
 			handleIntrospectionFailure(annotatedElement, ex);
+			return null;
 		}
-		return null;
 	}
 
 	/**
@@ -192,8 +192,8 @@ public abstract class AnnotationUtils {
 		}
 		catch (Throwable ex) {
 			handleIntrospectionFailure(annotatedElement, ex);
+			return null;
 		}
-		return null;
 	}
 
 	/**
@@ -232,8 +232,8 @@ public abstract class AnnotationUtils {
 		}
 		catch (Throwable ex) {
 			handleIntrospectionFailure(annotatedElement, ex);
+			return null;
 		}
-		return null;
 	}
 
 	/**
@@ -254,8 +254,8 @@ public abstract class AnnotationUtils {
 		}
 		catch (Throwable ex) {
 			handleIntrospectionFailure(method, ex);
+			return null;
 		}
-		return null;
 	}
 
 	/**
@@ -473,8 +473,8 @@ public abstract class AnnotationUtils {
 		}
 		catch (Throwable ex) {
 			handleIntrospectionFailure(annotatedElement, ex);
+			return Collections.emptySet();
 		}
-		return Collections.emptySet();
 	}
 
 	/**
@@ -568,7 +568,6 @@ public abstract class AnnotationUtils {
 		if (result == null) {
 			Method resolvedMethod = BridgeMethodResolver.findBridgedMethod(method);
 			result = findAnnotation((AnnotatedElement) resolvedMethod, annotationType);
-
 			if (result == null) {
 				result = searchOnInterfaces(method, annotationType, method.getDeclaringClass().getInterfaces());
 			}
@@ -603,10 +602,10 @@ public abstract class AnnotationUtils {
 
 	private static <A extends Annotation> A searchOnInterfaces(Method method, Class<A> annotationType, Class<?>... ifcs) {
 		A annotation = null;
-		for (Class<?> iface : ifcs) {
-			if (isInterfaceWithAnnotatedMethods(iface)) {
+		for (Class<?> ifc : ifcs) {
+			if (isInterfaceWithAnnotatedMethods(ifc)) {
 				try {
-					Method equivalentMethod = iface.getMethod(method.getName(), method.getParameterTypes());
+					Method equivalentMethod = ifc.getMethod(method.getName(), method.getParameterTypes());
 					annotation = getAnnotation(equivalentMethod, annotationType);
 				}
 				catch (NoSuchMethodException ex) {
@@ -620,13 +619,13 @@ public abstract class AnnotationUtils {
 		return annotation;
 	}
 
-	static boolean isInterfaceWithAnnotatedMethods(Class<?> iface) {
-		Boolean found = annotatedInterfaceCache.get(iface);
+	static boolean isInterfaceWithAnnotatedMethods(Class<?> ifc) {
+		Boolean found = annotatedInterfaceCache.get(ifc);
 		if (found != null) {
 			return found;
 		}
 		found = Boolean.FALSE;
-		for (Method ifcMethod : iface.getMethods()) {
+		for (Method ifcMethod : ifc.getMethods()) {
 			try {
 				if (ifcMethod.getAnnotations().length > 0) {
 					found = Boolean.TRUE;
@@ -637,7 +636,7 @@ public abstract class AnnotationUtils {
 				handleIntrospectionFailure(ifcMethod, ex);
 			}
 		}
-		annotatedInterfaceCache.put(iface, found);
+		annotatedInterfaceCache.put(ifc, found);
 		return found;
 	}
 
@@ -930,6 +929,32 @@ public abstract class AnnotationUtils {
 	 */
 	public static boolean isInJavaLangAnnotationPackage(String annotationType) {
 		return (annotationType != null && annotationType.startsWith("java.lang.annotation"));
+	}
+
+	/**
+	 * Check the declared attributes of the given annotation, in particular covering
+	 * Google App Engine's late arrival of {@code TypeNotPresentExceptionProxy} for
+	 * {@code Class} values (instead of early {@code Class.getAnnotations() failure}.
+	 * <p>This method not failing indicates that {@link #getAnnotationAttributes(Annotation)}
+	 * won't failure either (when attempted later on).
+	 * @param annotation the annotation to validate
+	 * @throws IllegalStateException if a declared {@code Class} attribute could not be read
+	 * @since 4.3.15
+	 * @see Class#getAnnotations()
+	 * @see #getAnnotationAttributes(Annotation)
+	 */
+	public static void validateAnnotation(Annotation annotation) {
+		for (Method method : getAttributeMethods(annotation.annotationType())) {
+			Class<?> returnType = method.getReturnType();
+			if (returnType == Class.class || returnType == Class[].class) {
+				try {
+					method.invoke(annotation);
+				}
+				catch (Throwable ex) {
+					throw new IllegalStateException("Could not obtain annotation attribute value for " + method, ex);
+				}
+			}
+		}
 	}
 
 	/**
@@ -1260,15 +1285,12 @@ public abstract class AnnotationUtils {
 				}
 				Object value = attributes.get(attributeName);
 				boolean valuePresent = (value != null && !(value instanceof DefaultValueHolder));
-
 				for (String aliasedAttributeName : aliasMap.get(attributeName)) {
 					if (valuesAlreadyReplaced.contains(aliasedAttributeName)) {
 						continue;
 					}
-
 					Object aliasedValue = attributes.get(aliasedAttributeName);
 					boolean aliasPresent = (aliasedValue != null && !(aliasedValue instanceof DefaultValueHolder));
-
 					// Something to validate or replace with an alias?
 					if (valuePresent || aliasPresent) {
 						if (valuePresent && aliasPresent) {
@@ -1320,7 +1342,9 @@ public abstract class AnnotationUtils {
 	 * Retrieve the <em>value</em> of the {@code value} attribute of a
 	 * single-element Annotation, given an annotation instance.
 	 * @param annotation the annotation instance from which to retrieve the value
-	 * @return the attribute value, or {@code null} if not found
+	 * @return the attribute value, or {@code null} if not found unless the attribute
+	 * value cannot be retrieved due to an {@link AnnotationConfigurationException},
+	 * in which case such an exception will be rethrown
 	 * @see #getValue(Annotation, String)
 	 */
 	public static Object getValue(Annotation annotation) {
@@ -1331,8 +1355,11 @@ public abstract class AnnotationUtils {
 	 * Retrieve the <em>value</em> of a named attribute, given an annotation instance.
 	 * @param annotation the annotation instance from which to retrieve the value
 	 * @param attributeName the name of the attribute value to retrieve
-	 * @return the attribute value, or {@code null} if not found
+	 * @return the attribute value, or {@code null} if not found unless the attribute
+	 * value cannot be retrieved due to an {@link AnnotationConfigurationException},
+	 * in which case such an exception will be rethrown
 	 * @see #getValue(Annotation)
+	 * @see #rethrowAnnotationConfigurationException(Throwable)
 	 */
 	public static Object getValue(Annotation annotation, String attributeName) {
 		if (annotation == null || !StringUtils.hasText(attributeName)) {
@@ -1343,7 +1370,13 @@ public abstract class AnnotationUtils {
 			ReflectionUtils.makeAccessible(method);
 			return method.invoke(annotation);
 		}
-		catch (Exception ex) {
+		catch (InvocationTargetException ex) {
+			rethrowAnnotationConfigurationException(ex.getTargetException());
+			throw new IllegalStateException(
+					"Could not obtain value for annotation attribute '" + attributeName + "' in " + annotation, ex);
+		}
+		catch (Throwable ex) {
+			handleIntrospectionFailure(annotation.getClass(), ex);
 			return null;
 		}
 	}
@@ -1399,7 +1432,8 @@ public abstract class AnnotationUtils {
 		try {
 			return annotationType.getDeclaredMethod(attributeName).getDefaultValue();
 		}
-		catch (Exception ex) {
+		catch (Throwable ex) {
+			handleIntrospectionFailure(annotationType, ex);
 			return null;
 		}
 	}
@@ -1868,17 +1902,31 @@ public abstract class AnnotationUtils {
 			logger = loggerToUse;
 		}
 		if (element instanceof Class && Annotation.class.isAssignableFrom((Class<?>) element)) {
-			// Meta-annotation lookup on an annotation type
+			// Meta-annotation or (default) value lookup on an annotation type
 			if (loggerToUse.isDebugEnabled()) {
-				loggerToUse.debug("Failed to introspect meta-annotations on [" + element + "]: " + ex);
+				loggerToUse.debug("Failed to meta-introspect annotation " + element + ": " + ex);
 			}
 		}
 		else {
 			// Direct annotation lookup on regular Class, Method, Field
 			if (loggerToUse.isInfoEnabled()) {
-				loggerToUse.info("Failed to introspect annotations on [" + element + "]: " + ex);
+				loggerToUse.info("Failed to introspect annotations on " + element + ": " + ex);
 			}
 		}
+	}
+
+	/**
+	 * Clear the internal annotation metadata cache.
+	 * @since 4.3.15
+	 */
+	public static void clearCache() {
+		findAnnotationCache.clear();
+		metaPresentCache.clear();
+		annotatedInterfaceCache.clear();
+		synthesizableCache.clear();
+		attributeAliasesCache.clear();
+		attributeMethodsCache.clear();
+		aliasDescriptorCache.clear();
 	}
 
 
@@ -1966,7 +2014,7 @@ public abstract class AnnotationUtils {
 						else if (ObjectUtils.nullSafeEquals(this.containerAnnotationType, currentAnnotationType)) {
 							this.result.addAll(getValue(element, ann));
 						}
-						else if (!isInJavaLangAnnotationPackage(ann)) {
+						else if (!isInJavaLangAnnotationPackage(currentAnnotationType)) {
 							process(currentAnnotationType);
 						}
 					}

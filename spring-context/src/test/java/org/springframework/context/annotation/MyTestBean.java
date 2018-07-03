@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,17 @@
  * limitations under the License.
  */
 
-package org.springframework.cache.jcache;
-
-import javax.cache.Caching;
-import javax.cache.spi.CachingProvider;
+package org.springframework.context.annotation;
 
 /**
- * Just here to be run against EHCache 3, whereas the original JCacheEhCacheAnnotationTests
- * runs against EhCache 2.x with the EhCache-JCache add-on.
- *
  * @author Juergen Hoeller
  */
-public class JCacheEhCache3AnnotationTests extends JCacheEhCacheAnnotationTests {
+@Configuration
+class MyTestBean {
 
-	@Override
-	protected CachingProvider getCachingProvider() {
-		return Caching.getCachingProvider("org.ehcache.jsr107.EhcacheCachingProvider");
+	@Bean
+	public org.springframework.tests.sample.beans.TestBean myTestBean() {
+		return new org.springframework.tests.sample.beans.TestBean();
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -122,20 +123,26 @@ import org.springframework.web.util.UriTemplateHandler;
 public class RestTemplate extends InterceptingHttpAccessor implements RestOperations {
 
 	private static boolean romePresent =
-			ClassUtils.isPresent("com.rometools.rome.feed.WireFeed", RestTemplate.class.getClassLoader());
+			ClassUtils.isPresent("com.rometools.rome.feed.WireFeed",
+					RestTemplate.class.getClassLoader());
 
 	private static final boolean jaxb2Present =
-			ClassUtils.isPresent("javax.xml.bind.Binder", RestTemplate.class.getClassLoader());
+			ClassUtils.isPresent("javax.xml.bind.Binder",
+					RestTemplate.class.getClassLoader());
 
 	private static final boolean jackson2Present =
-			ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper", RestTemplate.class.getClassLoader()) &&
-					ClassUtils.isPresent("com.fasterxml.jackson.core.JsonGenerator", RestTemplate.class.getClassLoader());
+			ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper",
+					RestTemplate.class.getClassLoader()) &&
+			ClassUtils.isPresent("com.fasterxml.jackson.core.JsonGenerator",
+					RestTemplate.class.getClassLoader());
 
 	private static final boolean jackson2XmlPresent =
-			ClassUtils.isPresent("com.fasterxml.jackson.dataformat.xml.XmlMapper", RestTemplate.class.getClassLoader());
+			ClassUtils.isPresent("com.fasterxml.jackson.dataformat.xml.XmlMapper",
+					RestTemplate.class.getClassLoader());
 
 	private static final boolean gsonPresent =
-			ClassUtils.isPresent("com.google.gson.Gson", RestTemplate.class.getClassLoader());
+			ClassUtils.isPresent("com.google.gson.Gson",
+					RestTemplate.class.getClassLoader());
 
 
 	private final List<HttpMessageConverter<?>> messageConverters = new ArrayList<HttpMessageConverter<?>>();
@@ -215,7 +222,8 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 	}
 
 	/**
-	 * Return the message body converters.
+	 * Return the list of message body converters.
+	 * <p>The returned {@link List} is active and may get appended to.
 	 */
 	public List<HttpMessageConverter<?>> getMessageConverters() {
 		return this.messageConverters;
@@ -583,7 +591,7 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 	public <T> ResponseEntity<T> exchange(RequestEntity<?> requestEntity, Class<T> responseType)
 			throws RestClientException {
 
-		Assert.notNull(requestEntity, "'requestEntity' must not be null");
+		Assert.notNull(requestEntity, "RequestEntity must not be null");
 
 		RequestCallback requestCallback = httpEntityCallback(requestEntity, responseType);
 		ResponseExtractor<ResponseEntity<T>> responseExtractor = responseEntityExtractor(responseType);
@@ -594,7 +602,7 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 	public <T> ResponseEntity<T> exchange(RequestEntity<?> requestEntity, ParameterizedTypeReference<T> responseType)
 			throws RestClientException {
 
-		Assert.notNull(requestEntity, "'requestEntity' must not be null");
+		Assert.notNull(requestEntity, "RequestEntity must not be null");
 
 		Type type = responseType.getType();
 		RequestCallback requestCallback = httpEntityCallback(requestEntity, type);
@@ -661,7 +669,7 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 		catch (IOException ex) {
 			String resource = url.toString();
 			String query = url.getRawQuery();
-			resource = (query != null ? resource.substring(0, resource.indexOf(query) - 1) : resource);
+			resource = (query != null ? resource.substring(0, resource.indexOf('?')) : resource);
 			throw new ResourceAccessException("I/O error on " + method.name() +
 					" request for \"" + resource + "\": " + ex.getMessage(), ex);
 		}
@@ -830,7 +838,9 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 				HttpHeaders httpHeaders = httpRequest.getHeaders();
 				HttpHeaders requestHeaders = this.requestEntity.getHeaders();
 				if (!requestHeaders.isEmpty()) {
-					httpHeaders.putAll(requestHeaders);
+					for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet()) {
+						httpHeaders.put(entry.getKey(), new LinkedList<String>(entry.getValue()));
+					}
 				}
 				if (httpHeaders.getContentLength() < 0) {
 					httpHeaders.setContentLength(0L);
@@ -841,6 +851,7 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 				Class<?> requestBodyClass = requestBody.getClass();
 				Type requestBodyType = (this.requestEntity instanceof RequestEntity ?
 						((RequestEntity<?>)this.requestEntity).getType() : requestBodyClass);
+				HttpHeaders httpHeaders = httpRequest.getHeaders();
 				HttpHeaders requestHeaders = this.requestEntity.getHeaders();
 				MediaType requestContentType = requestHeaders.getContentType();
 				for (HttpMessageConverter<?> messageConverter : getMessageConverters()) {
@@ -848,7 +859,9 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 						GenericHttpMessageConverter<Object> genericMessageConverter = (GenericHttpMessageConverter<Object>) messageConverter;
 						if (genericMessageConverter.canWrite(requestBodyType, requestBodyClass, requestContentType)) {
 							if (!requestHeaders.isEmpty()) {
-								httpRequest.getHeaders().putAll(requestHeaders);
+								for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet()) {
+									httpHeaders.put(entry.getKey(), new LinkedList<String>(entry.getValue()));
+								}
 							}
 							if (logger.isDebugEnabled()) {
 								if (requestContentType != null) {
@@ -867,7 +880,9 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 					}
 					else if (messageConverter.canWrite(requestBodyClass, requestContentType)) {
 						if (!requestHeaders.isEmpty()) {
-							httpRequest.getHeaders().putAll(requestHeaders);
+							for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet()) {
+								httpHeaders.put(entry.getKey(), new LinkedList<String>(entry.getValue()));
+							}
 						}
 						if (logger.isDebugEnabled()) {
 							if (requestContentType != null) {
@@ -915,10 +930,10 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 		public ResponseEntity<T> extractData(ClientHttpResponse response) throws IOException {
 			if (this.delegate != null) {
 				T body = this.delegate.extractData(response);
-				return new ResponseEntity<T>(body, response.getHeaders(), response.getStatusCode());
+				return ResponseEntity.status(response.getRawStatusCode()).headers(response.getHeaders()).body(body);
 			}
 			else {
-				return new ResponseEntity<T>(response.getHeaders(), response.getStatusCode());
+				return ResponseEntity.status(response.getRawStatusCode()).headers(response.getHeaders()).build();
 			}
 		}
 	}

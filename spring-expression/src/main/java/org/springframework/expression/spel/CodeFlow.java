@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,10 +149,8 @@ public class CodeFlow implements Opcodes {
 	 * Return the descriptor for the item currently on top of the stack (in the current scope).
 	 */
 	public String lastDescriptor() {
-		if (this.compilationScopes.peek().isEmpty()) {
-			return null;
-		}
-		return this.compilationScopes.peek().get(this.compilationScopes.peek().size() - 1);
+		ArrayList<String> scopes = this.compilationScopes.peek();
+		return (!scopes.isEmpty() ? scopes.get(scopes.size() - 1) : null);
 	}
 
 	/**
@@ -161,7 +159,7 @@ public class CodeFlow implements Opcodes {
 	 * @param mv the visitor into which new instructions should be inserted
 	 */
 	public void unboxBooleanIfNecessary(MethodVisitor mv) {
-		if (lastDescriptor().equals("Ljava/lang/Boolean")) {
+		if ("Ljava/lang/Boolean".equals(lastDescriptor())) {
 			mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false);
 		}
 	}
@@ -471,20 +469,14 @@ public class CodeFlow implements Opcodes {
 			}
 		}
 		if (clazz.isPrimitive()) {
-			if (clazz == Void.TYPE) {
-				sb.append('V');
-			}
-			else if (clazz == Integer.TYPE) {
-				sb.append('I');
-			}
-			else if (clazz == Boolean.TYPE) {
+			if (clazz == Boolean.TYPE) {
 				sb.append('Z');
+			}
+			else if (clazz == Byte.TYPE) {
+				sb.append('B');
 			}
 			else if (clazz == Character.TYPE) {
 				sb.append('C');
-			}
-			else if (clazz == Long.TYPE) {
-				sb.append('J');
 			}
 			else if (clazz == Double.TYPE) {
 				sb.append('D');
@@ -492,11 +484,17 @@ public class CodeFlow implements Opcodes {
 			else if (clazz == Float.TYPE) {
 				sb.append('F');
 			}
-			else if (clazz == Byte.TYPE) {
-				sb.append('B');
+			else if (clazz == Integer.TYPE) {
+				sb.append('I');
+			}
+			else if (clazz == Long.TYPE) {
+				sb.append('J');
 			}
 			else if (clazz == Short.TYPE) {
 				sb.append('S');
+			}
+			else if (clazz == Void.TYPE) {
+				sb.append('V');
 			}
 		}
 		else {
@@ -1003,6 +1001,21 @@ public class CodeFlow implements Opcodes {
 	public interface ClinitAdder {
 
 		void generateCode(MethodVisitor mv, CodeFlow codeflow);
+	}
+
+	public static String toBoxedDescriptor(String primitiveDescriptor) {
+		switch (primitiveDescriptor.charAt(0)) {
+			case 'I': return "Ljava/lang/Integer";
+			case 'J': return "Ljava/lang/Long";
+			case 'F': return "Ljava/lang/Float";
+			case 'D': return "Ljava/lang/Double";
+			case 'B': return "Ljava/lang/Byte";
+			case 'C': return "Ljava/lang/Character";
+			case 'S': return "Ljava/lang/Short";
+			case 'Z': return "Ljava/lang/Boolean";
+			default:
+				throw new IllegalArgumentException("Unexpected non primitive descriptor "+primitiveDescriptor);
+		}	
 	}
 
 }
