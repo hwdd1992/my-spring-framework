@@ -95,8 +95,10 @@ import org.springframework.util.StringValueResolver;
  * <p>A {@link org.springframework.context.MessageSource} may also be supplied
  * as a bean in the context, with the name "messageSource"; otherwise, message resolution is
  * delegated to the parent context. Furthermore, a multicaster for application events can be
- * supplied as "applicationEventMulticaster" bean of type {@link org.springframework.context.event.ApplicationEventMulticaster}
- * in the context; otherwise, a default multicaster of type {@link org.springframework.context.event.SimpleApplicationEventMulticaster}
+ * supplied as "applicationEventMulticaster" bean of type
+ * {@link org.springframework.context.event.ApplicationEventMulticaster}
+ * in the context; otherwise, a default multicaster of type
+ * {@link org.springframework.context.event.SimpleApplicationEventMulticaster}
  * will be used.
  *
  * <p>Implements resource loading through extending
@@ -547,20 +549,47 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
       // Prepare this context for refreshing.
       prepareRefresh();
 
-      // Tell the subclass to refresh the internal bean factory.
+      /*
+      Tell the subclass to refresh the internal bean factory.
+      初始化BeanFactory.
+      在这异步里,Spring将配置文件的信息装入容器的Bean定义注册
+      表(BeanDefinitionRegistry)中，但此时Bean还未初始化.(从
+      XML中或者扫描注解生成BeanDefinition)
+       */
       ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
-      // Prepare the bean factory for use in this context.
+      /*
+       * Prepare the bean factory for use in this context.
+       * 添加spring本身需要的一些工具类
+       */
       prepareBeanFactory(beanFactory);
 
       try {
-        // Allows post-processing of the bean factory in context subclasses.
+        /*
+        现在可以对已经构建的 BeanFactory 的配置做修改 - 许令波
+        Allows post-processing of the bean factory in context subclasses.
+         */
         postProcessBeanFactory(beanFactory);
 
-        // Invoke factory processors registered as beans in the context.
+        /*
+        现在可以对已经构建的 BeanFactory 的配置做修改 - 许令波
+        Invoke factory processors registered as beans in the context.
+        调用工厂后处理器
+        根据反射机制从BeanDefinitionRegistry中找出所有实现了BeanFactoryPostProcessor接口的Bean,
+        并调用其postProcessBeanFactory()接口方法
+         Invoke factory processors registered as beans in the context.
+         */
         invokeBeanFactoryPostProcessors(beanFactory);
 
-        // Register bean processors that intercept bean creation.
+        /*
+        你可以对以后在创建 Bean 的实例对象时添加一些自定义的操作
+        （并执行把它们注册到 BeanFactory 对象中的 beanPostProcessors 变量中） - 许令波
+
+        Register bean processors that intercept bean creation.
+        注册Bean后处理器
+        根据反射机制从BeanDefinitionRegistry中找出所有实现了BeanPostProcessor接口的Bean,并将它们
+        注册到容器Bean后处理器的注册表中
+         */
         registerBeanPostProcessors(beanFactory);
 
         // Initialize message source for this context.
@@ -1398,7 +1427,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
    *
    * @return this application context's internal bean factory (never {@code null})
    * @throws IllegalStateException if the context does not hold an internal bean factory yet
-   * (usually if {@link #refresh()} has never been called) or if the context has been closed
+   * (usually if {@link #refresh()} has never been called) or if the context has been
+   * closed
    * already
    * @see #refreshBeanFactory()
    * @see #closeBeanFactory()

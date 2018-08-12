@@ -30,68 +30,70 @@ import org.springframework.beans.factory.config.BeanDefinition;
  * {@code ChildBeanDefinition} where parent/child relationships happen to be pre-determined.
  *
  * @author Juergen Hoeller
- * @since 2.5
  * @see #setParentName
  * @see RootBeanDefinition
  * @see ChildBeanDefinition
+ * @since 2.5
  */
 @SuppressWarnings("serial")
 public class GenericBeanDefinition extends AbstractBeanDefinition {
 
-	private String parentName;
+    private String parentName;
 
 
-	/**
-	 * Create a new GenericBeanDefinition, to be configured through its bean
-	 * properties and configuration methods.
-	 * @see #setBeanClass
-	 * @see #setScope
-	 * @see #setConstructorArgumentValues
-	 * @see #setPropertyValues
-	 */
-	public GenericBeanDefinition() {
-		super();
-	}
+    /**
+     * Create a new GenericBeanDefinition, to be configured through its bean
+     * properties and configuration methods.
+     *
+     * @see #setBeanClass
+     * @see #setScope
+     * @see #setConstructorArgumentValues
+     * @see #setPropertyValues
+     */
+    public GenericBeanDefinition() {
+        super();
+    }
 
-	/**
-	 * Create a new GenericBeanDefinition as deep copy of the given
-	 * bean definition.
-	 * @param original the original bean definition to copy from
-	 */
-	public GenericBeanDefinition(BeanDefinition original) {
-		super(original);
-	}
-
-
-	@Override
-	public void setParentName(String parentName) {
-		this.parentName = parentName;
-	}
-
-	@Override
-	public String getParentName() {
-		return this.parentName;
-	}
+    /**
+     * Create a new GenericBeanDefinition as deep copy of the given
+     * bean definition.
+     *
+     * @param original the original bean definition to copy from
+     */
+    public GenericBeanDefinition(BeanDefinition original) {
+        super(original);
+    }
 
 
-	@Override
-	public AbstractBeanDefinition cloneBeanDefinition() {
-		return new GenericBeanDefinition(this);
-	}
+    @Override
+    public void setParentName(String parentName) {
+        this.parentName = parentName;
+    }
 
-	@Override
-	public boolean equals(Object other) {
-		return (this == other || (other instanceof GenericBeanDefinition && super.equals(other)));
-	}
+    @Override
+    public String getParentName() {
+        return this.parentName;
+    }
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder("Generic bean");
-		if (this.parentName != null) {
-			sb.append(" with parent '").append(this.parentName).append("'");
-		}
-		sb.append(": ").append(super.toString());
-		return sb.toString();
-	}
+
+    @Override
+    public AbstractBeanDefinition cloneBeanDefinition() {
+        return new GenericBeanDefinition(this);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return (this == other || (other instanceof GenericBeanDefinition && super.equals(other)));
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Generic bean");
+        if (this.parentName != null) {
+            sb.append(" with parent '").append(this.parentName).append("'");
+        }
+        sb.append(": ").append(super.toString());
+        return sb.toString();
+    }
 
 }
