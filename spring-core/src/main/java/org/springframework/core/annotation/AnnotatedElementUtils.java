@@ -479,12 +479,12 @@ public class AnnotatedElementUtils {
 	 * @param annotationType the annotation type to find (never {@code null})
 	 * @return the set of all merged repeatable {@code Annotations} found,
 	 * or an empty set if none were found
+	 * @throws IllegalArgumentException if the {@code element} or {@code annotationType}
+	 * is {@code null}, or if the container type cannot be resolved
 	 * @since 4.3
 	 * @see #getMergedAnnotation(AnnotatedElement, Class)
 	 * @see #getAllMergedAnnotations(AnnotatedElement, Class)
 	 * @see #getMergedRepeatableAnnotations(AnnotatedElement, Class, Class)
-	 * @throws IllegalArgumentException if the {@code element} or {@code annotationType}
-	 * is {@code null}, or if the container type cannot be resolved
 	 */
 	public static <A extends Annotation> Set<A> getMergedRepeatableAnnotations(AnnotatedElement element,
 			Class<A> annotationType) {
@@ -510,13 +510,13 @@ public class AnnotatedElementUtils {
 	 * {@link java.lang.annotation.Repeatable}
 	 * @return the set of all merged repeatable {@code Annotations} found,
 	 * or an empty set if none were found
-	 * @since 4.3
-	 * @see #getMergedAnnotation(AnnotatedElement, Class)
-	 * @see #getAllMergedAnnotations(AnnotatedElement, Class)
 	 * @throws IllegalArgumentException if the {@code element} or {@code annotationType}
 	 * is {@code null}, or if the container type cannot be resolved
 	 * @throws AnnotationConfigurationException if the supplied {@code containerType}
 	 * is not a valid container annotation for the supplied {@code annotationType}
+	 * @since 4.3
+	 * @see #getMergedAnnotation(AnnotatedElement, Class)
+	 * @see #getAllMergedAnnotations(AnnotatedElement, Class)
 	 */
 	public static <A extends Annotation> Set<A> getMergedRepeatableAnnotations(AnnotatedElement element,
 			Class<A> annotationType, Class<? extends Annotation> containerType) {
@@ -626,22 +626,20 @@ public class AnnotatedElementUtils {
 	 * attributes of the same name from higher levels, and
 	 * {@link AliasFor @AliasFor} semantics are fully supported, both
 	 * within a single annotation and within the annotation hierarchy.
-	 * <p>In contrast to {@link #getAllAnnotationAttributes}, the search
-	 * algorithm used by this method will stop searching the annotation
-	 * hierarchy once the first annotation of the specified
-	 * {@code annotationType} has been found. As a consequence, additional
-	 * annotations of the specified {@code annotationType} will be ignored.
+	 * <p>In contrast to {@link #getAllAnnotationAttributes}, the search algorithm
+	 * used by this method will stop searching the annotation hierarchy once the
+	 * first annotation of the specified {@code annotationType} has been found.
+	 * As a consequence, additional annotations of the specified
+	 * {@code annotationType} will be ignored.
 	 * <p>This method follows <em>find semantics</em> as described in the
 	 * {@linkplain AnnotatedElementUtils class-level javadoc}.
 	 * @param element the annotated element
 	 * @param annotationType the annotation type to find
 	 * @param classValuesAsString whether to convert Class references into
 	 * Strings or to preserve them as Class references
-	 * @param nestedAnnotationsAsMap whether to convert nested Annotation
-	 * instances into {@code AnnotationAttributes} maps or to preserve them
-	 * as Annotation instances
-	 * @return the merged {@code AnnotationAttributes}, or {@code null} if
-	 * not found
+	 * @param nestedAnnotationsAsMap whether to convert nested Annotation instances into
+	 * {@code AnnotationAttributes} maps or to preserve them as Annotation instances
+	 * @return the merged {@code AnnotationAttributes}, or {@code null} if not found
 	 * @since 4.2
 	 * @see #findMergedAnnotation(AnnotatedElement, Class)
 	 * @see #getMergedAnnotationAttributes(AnnotatedElement, String, boolean, boolean)
@@ -803,12 +801,12 @@ public class AnnotatedElementUtils {
 	 * @param annotationType the annotation type to find (never {@code null})
 	 * @return the set of all merged repeatable {@code Annotations} found,
 	 * or an empty set if none were found
+	 * @throws IllegalArgumentException if the {@code element} or {@code annotationType}
+	 * is {@code null}, or if the container type cannot be resolved
 	 * @since 4.3
 	 * @see #findMergedAnnotation(AnnotatedElement, Class)
 	 * @see #findAllMergedAnnotations(AnnotatedElement, Class)
 	 * @see #findMergedRepeatableAnnotations(AnnotatedElement, Class, Class)
-	 * @throws IllegalArgumentException if the {@code element} or {@code annotationType}
-	 * is {@code null}, or if the container type cannot be resolved
 	 */
 	public static <A extends Annotation> Set<A> findMergedRepeatableAnnotations(AnnotatedElement element,
 			Class<A> annotationType) {
@@ -834,13 +832,13 @@ public class AnnotatedElementUtils {
 	 * {@link java.lang.annotation.Repeatable}
 	 * @return the set of all merged repeatable {@code Annotations} found,
 	 * or an empty set if none were found
-	 * @since 4.3
-	 * @see #findMergedAnnotation(AnnotatedElement, Class)
-	 * @see #findAllMergedAnnotations(AnnotatedElement, Class)
 	 * @throws IllegalArgumentException if the {@code element} or {@code annotationType}
 	 * is {@code null}, or if the container type cannot be resolved
 	 * @throws AnnotationConfigurationException if the supplied {@code containerType}
 	 * is not a valid container annotation for the supplied {@code annotationType}
+	 * @since 4.3
+	 * @see #findMergedAnnotation(AnnotatedElement, Class)
+	 * @see #findAllMergedAnnotations(AnnotatedElement, Class)
 	 */
 	public static <A extends Annotation> Set<A> findMergedRepeatableAnnotations(AnnotatedElement element,
 			Class<A> annotationType, Class<? extends Annotation> containerType) {
@@ -1081,7 +1079,7 @@ public class AnnotatedElementUtils {
 
 		if (containerType != null && !processor.aggregates()) {
 			throw new IllegalArgumentException(
-				"Searches for repeatable annotations must supply an aggregating Processor");
+					"Searches for repeatable annotations must supply an aggregating Processor");
 		}
 
 		try {
@@ -1326,9 +1324,9 @@ public class AnnotatedElementUtils {
 	 * annotation for the supplied repeatable {@code annotationType} (i.e.,
 	 * that it declares a {@code value} attribute that holds an array of the
 	 * {@code annotationType}).
-	 * @since 4.3
 	 * @throws AnnotationConfigurationException if the supplied {@code containerType}
 	 * is not a valid container annotation for the supplied {@code annotationType}
+	 * @since 4.3
 	 */
 	private static void validateContainerType(Class<? extends Annotation> annotationType,
 			Class<? extends Annotation> containerType) {
@@ -1351,9 +1349,6 @@ public class AnnotatedElementUtils {
 		}
 	}
 
-	/**
-	 * @since 4.3
-	 */
 	private static <A extends Annotation> Set<A> postProcessAndSynthesizeAggregatedResults(AnnotatedElement element,
 			Class<A> annotationType, List<AnnotationAttributes> aggregatedResults) {
 
