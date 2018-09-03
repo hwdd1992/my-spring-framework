@@ -128,12 +128,14 @@ public abstract class AbstractHandlerExceptionResolver implements HandlerExcepti
 			HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
 
 		if (shouldApplyTo(request, handler)) {
-			if (this.logger.isDebugEnabled()) {
-				this.logger.debug("Resolving exception from handler [" + handler + "]: " + ex);
-			}
 			prepareResponse(ex, response);
 			ModelAndView result = doResolveException(request, response, handler, ex);
 			if (result != null) {
+				// Print warn message when warn logger is not enabled...
+				if (logger.isWarnEnabled() && (this.warnLogger == null || !this.warnLogger.isWarnEnabled())) {
+					logger.warn("Resolved [" + ex + "]" + (result.isEmpty() ? "" : " to " + result));
+				}
+				// warnLogger with full stack trace (requires explicit config)
 				logException(ex, request);
 			}
 			return result;
@@ -196,7 +198,7 @@ public abstract class AbstractHandlerExceptionResolver implements HandlerExcepti
 	 * @return the log message to use
 	 */
 	protected String buildLogMessage(Exception ex, HttpServletRequest request) {
-		return "Resolved exception caused by Handler execution: " + ex;
+		return "Resolved exception caused by handler execution: " + ex;
 	}
 
 	/**
