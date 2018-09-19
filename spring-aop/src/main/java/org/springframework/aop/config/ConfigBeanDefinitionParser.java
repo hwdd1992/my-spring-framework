@@ -185,8 +185,8 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
    */
   private AbstractBeanDefinition createAdvisorBeanDefinition(Element advisorElement,
       ParserContext parserContext) {
-    RootBeanDefinition advisorDefinition = new RootBeanDefinition(
-        DefaultBeanFactoryPointcutAdvisor.class);
+    RootBeanDefinition advisorDefinition =
+        new RootBeanDefinition(DefaultBeanFactoryPointcutAdvisor.class);
     advisorDefinition.setSource(parserContext.extractSource(advisorElement));
 
     String adviceRef = advisorElement.getAttribute(ADVICE_REF);
@@ -216,8 +216,8 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
       List<BeanDefinition> beanDefinitions = new ArrayList<BeanDefinition>();
       List<BeanReference> beanReferences = new ArrayList<BeanReference>();
 
-      List<Element> declareParents = DomUtils
-          .getChildElementsByTagName(aspectElement, DECLARE_PARENTS);
+      List<Element> declareParents =
+          DomUtils.getChildElementsByTagName(aspectElement, DECLARE_PARENTS);
       for (int i = METHOD_INDEX; i < declareParents.size(); i++) {
         Element declareParentsElement = declareParents.get(i);
         beanDefinitions.add(parseDeclareParents(declareParentsElement, parserContext));
