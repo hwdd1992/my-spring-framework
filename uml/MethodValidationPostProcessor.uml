@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>org.springframework.validation.beanvalidation.MethodValidationPostProcessor</OriginalElement>
+  <nodes>
+    <node x="1.3645833333333712" y="85.0">org.springframework.core.Ordered</node>
+    <node x="375.0" y="340.0">org.springframework.aop.framework.autoproxy.AbstractBeanFactoryAwareAdvisingPostProcessor</node>
+    <node x="0.0" y="340.0">java.lang.SuppressWarnings</node>
+    <node x="683.890625" y="0.0">org.springframework.beans.factory.Aware</node>
+    <node x="330.375" y="255.0">org.springframework.aop.framework.AbstractAdvisingBeanPostProcessor</node>
+    <node x="201.0" y="340.0">org.springframework.beans.factory.InitializingBean</node>
+    <node x="137.36458333333337" y="0.0">java.io.Serializable</node>
+    <node x="491.875" y="170.0">org.springframework.beans.factory.config.BeanPostProcessor</node>
+    <node x="135.36458333333337" y="85.0">org.springframework.aop.framework.ProxyConfig</node>
+    <node x="748.3645833333334" y="85.0">org.springframework.beans.factory.BeanFactoryAware</node>
+    <node x="153.86458333333337" y="425.0">org.springframework.validation.beanvalidation.MethodValidationPostProcessor</node>
+    <node x="193.86458333333337" y="170.0">org.springframework.aop.framework.ProxyProcessorSupport</node>
+    <node x="292.36458333333337" y="85.0">org.springframework.aop.framework.AopInfrastructureBean</node>
+    <node x="515.3645833333334" y="85.0">org.springframework.beans.factory.BeanClassLoaderAware</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="org.springframework.validation.beanvalidation.MethodValidationPostProcessor" target="org.springframework.aop.framework.autoproxy.AbstractBeanFactoryAwareAdvisingPostProcessor">
+      <point x="87.33333333333337" y="-17.5" />
+      <point x="372.19791666666674" y="400.0" />
+      <point x="564.0" y="400.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.aop.framework.AbstractAdvisingBeanPostProcessor" target="org.springframework.beans.factory.config.BeanPostProcessor">
+      <point x="72.75" y="-17.5" />
+      <point x="548.625" y="230.0" />
+      <point x="584.875" y="230.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.aop.framework.ProxyProcessorSupport" target="org.springframework.core.Ordered">
+      <point x="-78.75" y="-17.5" />
+      <point x="220.11458333333337" y="150.0" />
+      <point x="58.36458333333337" y="150.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.validation.beanvalidation.MethodValidationPostProcessor" target="org.springframework.beans.factory.InitializingBean">
+      <point x="0.0" y="-17.5" />
+      <point x="284.86458333333337" y="400.0" />
+      <point x="278.0" y="400.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.aop.framework.ProxyProcessorSupport" target="org.springframework.beans.factory.BeanClassLoaderAware">
+      <point x="78.75" y="-17.5" />
+      <point x="377.61458333333337" y="150.0" />
+      <point x="621.8645833333334" y="150.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.aop.framework.ProxyProcessorSupport" target="org.springframework.aop.framework.AopInfrastructureBean">
+      <point x="26.25" y="-17.5" />
+      <point x="325.11458333333337" y="140.0" />
+      <point x="393.86458333333337" y="140.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.aop.framework.ProxyConfig" target="java.io.Serializable">
+      <point x="0.0" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.beans.factory.BeanClassLoaderAware" target="org.springframework.beans.factory.Aware">
+      <point x="0.0" y="-17.5" />
+      <point x="621.8645833333334" y="60.0" />
+      <point x="708.890625" y="60.0" />
+      <point x="-25.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.aop.framework.ProxyProcessorSupport" target="org.springframework.aop.framework.ProxyConfig">
+      <point x="-26.25" y="-17.5" />
+      <point x="272.61458333333337" y="140.0" />
+      <point x="203.86458333333337" y="140.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.aop.framework.AbstractAdvisingBeanPostProcessor" target="org.springframework.aop.framework.ProxyProcessorSupport">
+      <point x="-72.75" y="-17.5" />
+      <point x="403.125" y="230.0" />
+      <point x="298.86458333333337" y="230.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.validation.beanvalidation.MethodValidationPostProcessor" target="java.lang.SuppressWarnings">
+      <point x="-87.33333333333326" y="-17.5" />
+      <point x="197.5312500000001" y="400.0" />
+      <point x="90.5" y="400.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.aop.framework.autoproxy.AbstractBeanFactoryAwareAdvisingPostProcessor" target="org.springframework.beans.factory.BeanFactoryAware">
+      <point x="94.49999999999999" y="-17.5" />
+      <point x="658.5" y="315.0" />
+      <point x="838.8645833333334" y="315.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.beans.factory.BeanFactoryAware" target="org.springframework.beans.factory.Aware">
+      <point x="0.0" y="-17.5" />
+      <point x="838.8645833333334" y="60.0" />
+      <point x="758.890625" y="60.0" />
+      <point x="25.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.aop.framework.autoproxy.AbstractBeanFactoryAwareAdvisingPostProcessor" target="org.springframework.aop.framework.AbstractAdvisingBeanPostProcessor">
+      <point x="-94.5" y="-17.5" />
+      <point x="469.5" y="315.0" />
+      <point x="475.875" y="315.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="465.0" y="230.0" />
+  <SelectedNodes />
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+
