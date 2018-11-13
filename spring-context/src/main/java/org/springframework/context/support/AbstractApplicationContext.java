@@ -95,10 +95,8 @@ import org.springframework.util.StringValueResolver;
  * <p>A {@link org.springframework.context.MessageSource} may also be supplied
  * as a bean in the context, with the name "messageSource"; otherwise, message resolution is
  * delegated to the parent context. Furthermore, a multicaster for application events can be
- * supplied as "applicationEventMulticaster" bean of type
- * {@link org.springframework.context.event.ApplicationEventMulticaster}
- * in the context; otherwise, a default multicaster of type
- * {@link org.springframework.context.event.SimpleApplicationEventMulticaster}
+ * supplied as "applicationEventMulticaster" bean of type {@link org.springframework.context.event.ApplicationEventMulticaster}
+ * in the context; otherwise, a default multicaster of type {@link org.springframework.context.event.SimpleApplicationEventMulticaster}
  * will be used.
  *
  * <p>Implements resource loading through extending
@@ -561,6 +559,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
       /*
        * Prepare the bean factory for use in this context.
        * 添加spring本身需要的一些工具类
+       * 此方法负责对BeanFactory进行一些特征的设置工作.
        */
       prepareBeanFactory(beanFactory);
 
@@ -691,12 +690,22 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
   protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
     // Tell the internal bean factory to use the context's class loader etc.
     beanFactory.setBeanClassLoader(getClassLoader());
+
+    //el表达式的解析类
     beanFactory.setBeanExpressionResolver(
         new StandardBeanExpressionResolver(beanFactory.getBeanClassLoader()));
+
+    /*
+    注册java.beans.PropertyEditor
+    在编写xml配置时，我们设置的值都是字符串形式，所以在使用时肯定需要转为我们需要的类型，PropertyEditor接口正是定义了这么个东西。
+     */
     beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
 
     // Configure the bean factory with context callbacks.
     beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
+    /*
+    此部分设置哪些接口在进行依赖注入的时候应该被忽略
+     */
     beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
     beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
     beanFactory.ignoreDependencyInterface(ResourceLoaderAware.class);
@@ -706,6 +715,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
     // BeanFactory interface not registered as resolvable type in a plain factory.
     // MessageSource registered (and found for autowiring) as a bean.
+    /*
+    有些对象并不在BeanFactory中，但是我们依然想让它们可以被装配，这就需要伪装一下:
+     */
     beanFactory.registerResolvableDependency(BeanFactory.class, beanFactory);
     beanFactory.registerResolvableDependency(ResourceLoader.class, this);
     beanFactory.registerResolvableDependency(ApplicationEventPublisher.class, this);
@@ -722,7 +734,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
           .setTempClassLoader(new ContextTypeMatchClassLoader(beanFactory.getBeanClassLoader()));
     }
 
-    // Register default environment beans.
+    // Register default environment beans.注册环境
     if (!beanFactory.containsLocalBean(ENVIRONMENT_BEAN_NAME)) {
       beanFactory.registerSingleton(ENVIRONMENT_BEAN_NAME, getEnvironment());
     }
@@ -1427,8 +1439,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
    *
    * @return this application context's internal bean factory (never {@code null})
    * @throws IllegalStateException if the context does not hold an internal bean factory yet
-   * (usually if {@link #refresh()} has never been called) or if the context has been
-   * closed
+   * (usually if {@link #refresh()} has never been called) or if the context has been closed
    * already
    * @see #refreshBeanFactory()
    * @see #closeBeanFactory()
