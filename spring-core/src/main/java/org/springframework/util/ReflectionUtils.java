@@ -827,22 +827,11 @@ public abstract class ReflectionUtils {
     }
 
 
-    /**
-     * Pre-built FieldFilter that matches all non-static, non-final fields.
-     */
-    public static final FieldFilter COPYABLE_FIELDS = new FieldFilter() {
-
-        @Override
-        public boolean matches(Field field) {
-            return !(Modifier.isStatic(field.getModifiers()) || Modifier.isFinal(field.getModifiers()));
-        }
-    };
-
-
-    /**
-     * Pre-built MethodFilter that matches all non-bridge methods.
-     */
-    public static final MethodFilter NON_BRIDGED_METHODS = new MethodFilter() {
+	/**
+	 * Pre-built MethodFilter that matches all non-bridge methods.
+	 * @since 3.0
+	 */
+	public static final MethodFilter NON_BRIDGED_METHODS = new MethodFilter() {
 
         @Override
         public boolean matches(Method method) {
@@ -851,16 +840,29 @@ public abstract class ReflectionUtils {
     };
 
 
-    /**
-     * Pre-built MethodFilter that matches all non-bridge methods
-     * which are not declared on {@code java.lang.Object}.
-     */
-    public static final MethodFilter USER_DECLARED_METHODS = new MethodFilter() {
+	/**
+	 * Pre-built MethodFilter that matches all non-bridge methods
+	 * which are not declared on {@code java.lang.Object}.
+	 * @since 3.0.5
+	 */
+	public static final MethodFilter USER_DECLARED_METHODS = new MethodFilter() {
 
         @Override
         public boolean matches(Method method) {
             return (!method.isBridge() && method.getDeclaringClass() != Object.class);
         }
     };
+
+
+	/**
+	 * Pre-built FieldFilter that matches all non-static, non-final fields.
+	 */
+	public static final FieldFilter COPYABLE_FIELDS = new FieldFilter() {
+
+		@Override
+		public boolean matches(Field field) {
+			return !(Modifier.isStatic(field.getModifiers()) || Modifier.isFinal(field.getModifiers()));
+		}
+	};
 
 }
