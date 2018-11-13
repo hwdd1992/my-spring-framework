@@ -464,11 +464,14 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
             boolean isFactoryBean = isFactoryBean(beanName, mbd);
             BeanDefinitionHolder dbd = mbd.getDecoratedDefinition();
             boolean matchFound =
-                (allowEagerInit || !isFactoryBean ||
-                    (dbd != null && !mbd.isLazyInit()) || containsSingleton(beanName)) &&
-                    (includeNonSingletons ||
-                        (dbd != null ? mbd.isSingleton() : isSingleton(beanName))) &&
-                    isTypeMatch(beanName, type);
+                (
+                    allowEagerInit || !isFactoryBean
+                        || (dbd != null && !mbd.isLazyInit())
+                        || containsSingleton(beanName)
+                ) && (
+                    includeNonSingletons
+                        || (dbd != null ? mbd.isSingleton() : isSingleton(beanName))
+                ) && isTypeMatch(beanName, type);
             if (!matchFound && isFactoryBean) {
               // In case of FactoryBean, try to match FactoryBean instance itself next.
               beanName = FACTORY_BEAN_PREFIX + beanName;

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>org.springframework.aop.framework.ProxyFactory</OriginalElement>
+  <nodes>
+    <node x="291.0" y="85.0">org.springframework.aop.framework.ProxyConfig</node>
+    <node x="0.0" y="0.0">org.springframework.aop.TargetClassAware</node>
+    <node x="31.75" y="255.0">org.springframework.aop.framework.ProxyCreatorSupport</node>
+    <node x="0.0" y="420.0">java.lang.SuppressWarnings</node>
+    <node x="33.0" y="85.0">org.springframework.aop.framework.Advised</node>
+    <node x="56.75" y="340.0">org.springframework.aop.framework.ProxyFactory</node>
+    <node x="229.25" y="170.0">org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator</node>
+    <node x="48.25" y="170.0">org.springframework.aop.framework.AdvisedSupport</node>
+    <node x="293.0" y="0.0">java.io.Serializable</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="org.springframework.aop.framework.Advised" target="org.springframework.aop.TargetClassAware">
+      <point x="0.0" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.aop.framework.ProxyCreatorSupport" target="org.springframework.aop.framework.AdvisedSupport">
+      <point x="0.0" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator" target="org.springframework.aop.framework.ProxyConfig">
+      <point x="0.0" y="-17.5" />
+      <point x="34.25" y="17.5" />
+    </edge>
+    <edge source="org.springframework.aop.framework.ProxyFactory" target="org.springframework.aop.framework.ProxyCreatorSupport">
+      <point x="0.0" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.aop.framework.AdvisedSupport" target="org.springframework.aop.framework.ProxyConfig">
+      <point x="40.25" y="-17.5" />
+      <point x="169.0" y="145.0" />
+      <point x="325.25" y="145.0" />
+      <point x="-34.25" y="17.5" />
+    </edge>
+    <edge source="org.springframework.aop.framework.ProxyConfig" target="java.io.Serializable">
+      <point x="0.0" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="org.springframework.aop.framework.AdvisedSupport" target="org.springframework.aop.framework.Advised">
+      <point x="-40.25" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="329.4999999999999" y="255.5" />
+  <SelectedNodes>
+    <node>org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator</node>
+  </SelectedNodes>
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+
