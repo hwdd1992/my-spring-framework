@@ -101,7 +101,10 @@ class ConfigBeanDefinitionParser implements BeanDefinitionParser {
             parserContext.extractSource(element)
         );
     parserContext.pushContainingComponent(compositeDef);
-    //是否生成代理类
+    /*
+    是否生成代理类,将 config 标签注册成 AspectJAwareAdvisorAutoProxyCreator.class bean.
+    AspectJAwareAdvisorAutoProxyCreator 类有优先级
+     */
     configureAutoProxyCreator(parserContext, element);
 
     List<Element> childElts = DomUtils.getChildElements(element);
