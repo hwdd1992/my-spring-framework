@@ -16,9 +16,8 @@
 
 package org.springframework.transaction.config;
 
-import org.w3c.dom.Element;
-
 import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
+import org.w3c.dom.Element;
 
 /**
  * {@code NamespaceHandler} allowing for the configuration of declarative transaction management
@@ -53,6 +52,14 @@ public class TxNamespaceHandler extends NamespaceHandlerSupport {
 
   @Override
   public void init() {
+    /*
+    1. tx:advice 注册的beanDefinition 本质是 TransactionInterceptor.class
+
+    2. tx:attributes 注册的是RootBeanDefinition 本质是 NameMatchTransactionAttributeSource.class
+
+    3. tx:method 没有转换成 BeanDefinition，但是封装成了 RuleBasedTransactionAttribute.class 对象,其中
+    rollback-for 被封装成了RollbackRuleAttribute.class 对象
+     */
     registerBeanDefinitionParser("advice", new TxAdviceBeanDefinitionParser());
     registerBeanDefinitionParser("annotation-driven", new AnnotationDrivenBeanDefinitionParser());
     registerBeanDefinitionParser("jta-transaction-manager",

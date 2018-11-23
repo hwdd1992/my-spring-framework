@@ -53,6 +53,7 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
    */
   @Override
   public BeanDefinition parse(Element element, ParserContext parserContext) {
+    //注册 TransactionalEventListenerFactory.class  RootBeanDefinition
     registerTransactionalEventListenerFactory(parserContext);
     String mode = element.getAttribute("mode");
     if ("aspectj".equals(mode)) {
@@ -102,14 +103,21 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
       if (!parserContext.getRegistry().containsBeanDefinition(txAdvisorBeanName)) {
         Object eleSource = parserContext.extractSource(element);
 
-        // Create the TransactionAttributeSource definition.
-        RootBeanDefinition sourceDef = new RootBeanDefinition(
-            "org.springframework.transaction.annotation.AnnotationTransactionAttributeSource");
+        /*
+        Create the TransactionAttributeSource definition.
+        帮助解析事务注解信息，封装并保存成 TransactionAttribute 等.
+         */
+        RootBeanDefinition sourceDef = new RootBeanDefinition("org.springframework"
+            + ".transaction.annotation.AnnotationTransactionAttributeSource");
         sourceDef.setSource(eleSource);
         sourceDef.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
         String sourceName = parserContext.getReaderContext().registerWithGeneratedName(sourceDef);
 
-        // Create the TransactionInterceptor definition.
+        /*
+        Create the TransactionInterceptor definition.
+        事务拦截器.在AOP的拦截器调用过程中接触过拦截器的概念，Spring会将所有的拦截器封装成 Advisors，
+        最后会调用拦截器的 invoke() 方法进行目标方法增强等.
+         */
         RootBeanDefinition interceptorDef = new RootBeanDefinition(TransactionInterceptor.class);
         interceptorDef.setSource(eleSource);
         interceptorDef.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
@@ -119,7 +127,10 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
         String interceptorName = parserContext.getReaderContext()
             .registerWithGeneratedName(interceptorDef);
 
-        // Create the TransactionAttributeSourceAdvisor definition.
+        /*
+         Create the TransactionAttributeSourceAdvisor definition.
+         事务属性增强器. 可见其属于增强器 Advisor 类型,其中可以定义切点表达式相关的内容
+         */
         RootBeanDefinition advisorDef = new RootBeanDefinition(
             BeanFactoryTransactionAttributeSourceAdvisor.class);
         advisorDef.setSource(eleSource);

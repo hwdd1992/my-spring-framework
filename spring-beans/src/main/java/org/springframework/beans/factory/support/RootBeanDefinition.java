@@ -42,6 +42,14 @@ import org.springframework.util.Assert;
  * GenericBeanDefinition has the advantage that it allows to dynamically define
  * parent dependencies, not 'hard-coding' the role as a root bean definition.
  *
+ * <p>根bean定义表示合并的bean定义，该定义在运行时支持Spring BeanFactory中的特定bean。
+ * 它可能是从多个原始bean定义创建的，这些定义相互继承，通常注册为GenericBeanDefinitions。
+ * 根bean定义本质上是运行时的“统一”bean定义视图。
+ *
+ * <p> 根bean定义也可用于在配置阶段注册单个bean定义。 但是，从Spring 2.5开始，
+ * 以编程方式注册bean定义的首选方法是GenericBeanDefinition类。
+ * GenericBeanDefinition的优点是它允许动态定义父依赖关系，而不是将角色“硬编码”为根bean定义。
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @see GenericBeanDefinition
@@ -50,348 +58,351 @@ import org.springframework.util.Assert;
 @SuppressWarnings("serial")
 public class RootBeanDefinition extends AbstractBeanDefinition {
 
-    private BeanDefinitionHolder decoratedDefinition;
+  private BeanDefinitionHolder decoratedDefinition;
 
-    private AnnotatedElement qualifiedElement;
+  private AnnotatedElement qualifiedElement;
 
-    boolean allowCaching = true;
+  boolean allowCaching = true;
 
-    boolean isFactoryMethodUnique = false;
+  boolean isFactoryMethodUnique = false;
 
-    volatile ResolvableType targetType;
+  volatile ResolvableType targetType;
 
-    /**
-     * Package-visible field for caching the determined Class of a given bean definition
-     */
-    volatile Class<?> resolvedTargetType;
+  /**
+   * Package-visible field for caching the determined Class of a given bean definition
+   */
+  volatile Class<?> resolvedTargetType;
 
-    /**
-     * Package-visible field for caching the return type of a generically typed factory method
-     */
-    volatile ResolvableType factoryMethodReturnType;
+  /**
+   * Package-visible field for caching the return type of a generically typed factory method
+   */
+  volatile ResolvableType factoryMethodReturnType;
 
-    /**
-     * Common lock for the four constructor fields below
-     */
-    final Object constructorArgumentLock = new Object();
+  /**
+   * Common lock for the four constructor fields below
+   */
+  final Object constructorArgumentLock = new Object();
 
-    /**
-     * Package-visible field for caching the resolved constructor or factory method
-     */
-    Object resolvedConstructorOrFactoryMethod;
+  /**
+   * Package-visible field for caching the resolved constructor or factory method
+   */
+  Object resolvedConstructorOrFactoryMethod;
 
-    /**
-     * Package-visible field that marks the constructor arguments as resolved
-     */
-    boolean constructorArgumentsResolved = false;
+  /**
+   * Package-visible field that marks the constructor arguments as resolved
+   */
+  boolean constructorArgumentsResolved = false;
 
-    /**
-     * Package-visible field for caching fully resolved constructor arguments
-     */
-    Object[] resolvedConstructorArguments;
+  /**
+   * Package-visible field for caching fully resolved constructor arguments
+   */
+  Object[] resolvedConstructorArguments;
 
-    /**
-     * Package-visible field for caching partly prepared constructor arguments
-     */
-    Object[] preparedConstructorArguments;
+  /**
+   * Package-visible field for caching partly prepared constructor arguments
+   */
+  Object[] preparedConstructorArguments;
 
-    /**
-     * Common lock for the two post-processing fields below
-     */
-    final Object postProcessingLock = new Object();
+  /**
+   * Common lock for the two post-processing fields below
+   */
+  final Object postProcessingLock = new Object();
 
-    /**
-     * Package-visible field that indicates MergedBeanDefinitionPostProcessor having been applied
-     */
-    boolean postProcessed = false;
+  /**
+   * Package-visible field that indicates MergedBeanDefinitionPostProcessor having been applied
+   */
+  boolean postProcessed = false;
 
-    /**
-     * Package-visible field that indicates a before-instantiation post-processor having kicked in
-     */
-    volatile Boolean beforeInstantiationResolved;
+  /**
+   * Package-visible field that indicates a before-instantiation post-processor having kicked in
+   */
+  volatile Boolean beforeInstantiationResolved;
 
-    private Set<Member> externallyManagedConfigMembers;
+  private Set<Member> externallyManagedConfigMembers;
 
-    private Set<String> externallyManagedInitMethods;
+  private Set<String> externallyManagedInitMethods;
 
-    private Set<String> externallyManagedDestroyMethods;
+  private Set<String> externallyManagedDestroyMethods;
 
 
-    /**
-     * Create a new RootBeanDefinition, to be configured through its bean
-     * properties and configuration methods.
-     *
-     * @see #setBeanClass
-     * @see #setScope
-     * @see #setConstructorArgumentValues
-     * @see #setPropertyValues
-     */
-    public RootBeanDefinition() {
-        super();
+  /**
+   * Create a new RootBeanDefinition, to be configured through its bean
+   * properties and configuration methods.
+   *
+   * @see #setBeanClass
+   * @see #setScope
+   * @see #setConstructorArgumentValues
+   * @see #setPropertyValues
+   */
+  public RootBeanDefinition() {
+    super();
+  }
+
+  /**
+   * Create a new RootBeanDefinition for a singleton.
+   *
+   * @param beanClass the class of the bean to instantiate
+   * @see #setBeanClass
+   */
+  public RootBeanDefinition(Class<?> beanClass) {
+    super();
+    setBeanClass(beanClass);
+  }
+
+  /**
+   * Create a new RootBeanDefinition for a singleton,
+   * using the given autowire mode.
+   *
+   * @param beanClass the class of the bean to instantiate
+   * @param autowireMode by name or type, using the constants in this interface
+   * @param dependencyCheck whether to perform a dependency check for objects
+   * (not applicable to autowiring a constructor, thus ignored there)
+   */
+  public RootBeanDefinition(Class<?> beanClass, int autowireMode, boolean dependencyCheck) {
+    super();
+    setBeanClass(beanClass);
+    setAutowireMode(autowireMode);
+    if (dependencyCheck && getResolvedAutowireMode() != AUTOWIRE_CONSTRUCTOR) {
+      setDependencyCheck(DEPENDENCY_CHECK_OBJECTS);
     }
+  }
 
-    /**
-     * Create a new RootBeanDefinition for a singleton.
-     *
-     * @param beanClass the class of the bean to instantiate
-     * @see #setBeanClass
-     */
-    public RootBeanDefinition(Class<?> beanClass) {
-        super();
-        setBeanClass(beanClass);
+  /**
+   * Create a new RootBeanDefinition for a singleton,
+   * providing constructor arguments and property values.
+   *
+   * @param beanClass the class of the bean to instantiate
+   * @param cargs the constructor argument values to apply
+   * @param pvs the property values to apply
+   */
+  public RootBeanDefinition(Class<?> beanClass, ConstructorArgumentValues cargs,
+      MutablePropertyValues pvs) {
+    super(cargs, pvs);
+    setBeanClass(beanClass);
+  }
+
+  /**
+   * Create a new RootBeanDefinition for a singleton,
+   * providing constructor arguments and property values.
+   * <p>Takes a bean class name to avoid eager loading of the bean class.
+   *
+   * @param beanClassName the name of the class to instantiate
+   */
+  public RootBeanDefinition(String beanClassName) {
+    setBeanClassName(beanClassName);
+  }
+
+  /**
+   * Create a new RootBeanDefinition for a singleton,
+   * providing constructor arguments and property values.
+   * <p>Takes a bean class name to avoid eager loading of the bean class.
+   *
+   * @param beanClassName the name of the class to instantiate
+   * @param cargs the constructor argument values to apply
+   * @param pvs the property values to apply
+   */
+  public RootBeanDefinition(String beanClassName, ConstructorArgumentValues cargs,
+      MutablePropertyValues pvs) {
+    super(cargs, pvs);
+    setBeanClassName(beanClassName);
+  }
+
+  /**
+   * Create a new RootBeanDefinition as deep copy of the given
+   * bean definition.
+   *
+   * @param original the original bean definition to copy from
+   */
+  public RootBeanDefinition(RootBeanDefinition original) {
+    super(original);
+    this.decoratedDefinition = original.decoratedDefinition;
+    this.qualifiedElement = original.qualifiedElement;
+    this.allowCaching = original.allowCaching;
+    this.isFactoryMethodUnique = original.isFactoryMethodUnique;
+    this.targetType = original.targetType;
+  }
+
+  /**
+   * Create a new RootBeanDefinition as deep copy of the given
+   * bean definition.
+   *
+   * @param original the original bean definition to copy from
+   */
+  RootBeanDefinition(BeanDefinition original) {
+    super(original);
+  }
+
+
+  @Override
+  public String getParentName() {
+    return null;
+  }
+
+  @Override
+  public void setParentName(String parentName) {
+    if (parentName != null) {
+      throw new IllegalArgumentException(
+          "Root bean cannot be changed into a child bean with parent reference");
     }
+  }
 
-    /**
-     * Create a new RootBeanDefinition for a singleton,
-     * using the given autowire mode.
-     *
-     * @param beanClass       the class of the bean to instantiate
-     * @param autowireMode    by name or type, using the constants in this interface
-     * @param dependencyCheck whether to perform a dependency check for objects
-     *                        (not applicable to autowiring a constructor, thus ignored there)
-     */
-    public RootBeanDefinition(Class<?> beanClass, int autowireMode, boolean dependencyCheck) {
-        super();
-        setBeanClass(beanClass);
-        setAutowireMode(autowireMode);
-        if (dependencyCheck && getResolvedAutowireMode() != AUTOWIRE_CONSTRUCTOR) {
-            setDependencyCheck(DEPENDENCY_CHECK_OBJECTS);
-        }
+  /**
+   * Register a target definition that is being decorated by this bean definition.
+   */
+  public void setDecoratedDefinition(BeanDefinitionHolder decoratedDefinition) {
+    this.decoratedDefinition = decoratedDefinition;
+  }
+
+  /**
+   * Return the target definition that is being decorated by this bean definition, if any.
+   */
+  public BeanDefinitionHolder getDecoratedDefinition() {
+    return this.decoratedDefinition;
+  }
+
+  /**
+   * Specify the {@link AnnotatedElement} defining qualifiers,
+   * to be used instead of the target class or factory method.
+   *
+   * @see #setTargetType(ResolvableType)
+   * @see #getResolvedFactoryMethod()
+   * @since 4.3.3
+   */
+  public void setQualifiedElement(AnnotatedElement qualifiedElement) {
+    this.qualifiedElement = qualifiedElement;
+  }
+
+  /**
+   * Return the {@link AnnotatedElement} defining qualifiers, if any.
+   * Otherwise, the factory method and target class will be checked.
+   *
+   * @since 4.3.3
+   */
+  public AnnotatedElement getQualifiedElement() {
+    return this.qualifiedElement;
+  }
+
+  /**
+   * Specify a generics-containing target type of this bean definition, if known in advance.
+   *
+   * @since 4.3.3
+   */
+  public void setTargetType(ResolvableType targetType) {
+    this.targetType = targetType;
+  }
+
+  /**
+   * Specify the target type of this bean definition, if known in advance.
+   *
+   * @since 3.2.2
+   */
+  public void setTargetType(Class<?> targetType) {
+    this.targetType = (targetType != null ? ResolvableType.forClass(targetType) : null);
+  }
+
+  /**
+   * Return the target type of this bean definition, if known
+   * (either specified in advance or resolved on first instantiation).
+   *
+   * @since 3.2.2
+   */
+  public Class<?> getTargetType() {
+    if (this.resolvedTargetType != null) {
+      return this.resolvedTargetType;
     }
+    return (this.targetType != null ? this.targetType.resolve() : null);
+  }
 
-    /**
-     * Create a new RootBeanDefinition for a singleton,
-     * providing constructor arguments and property values.
-     *
-     * @param beanClass the class of the bean to instantiate
-     * @param cargs     the constructor argument values to apply
-     * @param pvs       the property values to apply
-     */
-    public RootBeanDefinition(Class<?> beanClass, ConstructorArgumentValues cargs, MutablePropertyValues pvs) {
-        super(cargs, pvs);
-        setBeanClass(beanClass);
+  /**
+   * Specify a factory method name that refers to a non-overloaded method.
+   */
+  public void setUniqueFactoryMethodName(String name) {
+    Assert.hasText(name, "Factory method name must not be empty");
+    setFactoryMethodName(name);
+    this.isFactoryMethodUnique = true;
+  }
+
+  /**
+   * Check whether the given candidate qualifies as a factory method.
+   */
+  public boolean isFactoryMethod(Method candidate) {
+    return (candidate != null && candidate.getName().equals(getFactoryMethodName()));
+  }
+
+  /**
+   * Return the resolved factory method as a Java Method object, if available.
+   *
+   * @return the factory method, or {@code null} if not found or not resolved yet
+   */
+  public Method getResolvedFactoryMethod() {
+    synchronized (this.constructorArgumentLock) {
+      Object candidate = this.resolvedConstructorOrFactoryMethod;
+      return (candidate instanceof Method ? (Method) candidate : null);
     }
+  }
 
-    /**
-     * Create a new RootBeanDefinition for a singleton,
-     * providing constructor arguments and property values.
-     * <p>Takes a bean class name to avoid eager loading of the bean class.
-     *
-     * @param beanClassName the name of the class to instantiate
-     */
-    public RootBeanDefinition(String beanClassName) {
-        setBeanClassName(beanClassName);
+  public void registerExternallyManagedConfigMember(Member configMember) {
+    synchronized (this.postProcessingLock) {
+      if (this.externallyManagedConfigMembers == null) {
+        this.externallyManagedConfigMembers = new HashSet<Member>(1);
+      }
+      this.externallyManagedConfigMembers.add(configMember);
     }
+  }
 
-    /**
-     * Create a new RootBeanDefinition for a singleton,
-     * providing constructor arguments and property values.
-     * <p>Takes a bean class name to avoid eager loading of the bean class.
-     *
-     * @param beanClassName the name of the class to instantiate
-     * @param cargs         the constructor argument values to apply
-     * @param pvs           the property values to apply
-     */
-    public RootBeanDefinition(String beanClassName, ConstructorArgumentValues cargs, MutablePropertyValues pvs) {
-        super(cargs, pvs);
-        setBeanClassName(beanClassName);
+  public boolean isExternallyManagedConfigMember(Member configMember) {
+    synchronized (this.postProcessingLock) {
+      return (this.externallyManagedConfigMembers != null &&
+          this.externallyManagedConfigMembers.contains(configMember));
     }
+  }
 
-    /**
-     * Create a new RootBeanDefinition as deep copy of the given
-     * bean definition.
-     *
-     * @param original the original bean definition to copy from
-     */
-    public RootBeanDefinition(RootBeanDefinition original) {
-        super(original);
-        this.decoratedDefinition = original.decoratedDefinition;
-        this.qualifiedElement = original.qualifiedElement;
-        this.allowCaching = original.allowCaching;
-        this.isFactoryMethodUnique = original.isFactoryMethodUnique;
-        this.targetType = original.targetType;
+  public void registerExternallyManagedInitMethod(String initMethod) {
+    synchronized (this.postProcessingLock) {
+      if (this.externallyManagedInitMethods == null) {
+        this.externallyManagedInitMethods = new HashSet<String>(1);
+      }
+      this.externallyManagedInitMethods.add(initMethod);
     }
+  }
 
-    /**
-     * Create a new RootBeanDefinition as deep copy of the given
-     * bean definition.
-     *
-     * @param original the original bean definition to copy from
-     */
-    RootBeanDefinition(BeanDefinition original) {
-        super(original);
+  public boolean isExternallyManagedInitMethod(String initMethod) {
+    synchronized (this.postProcessingLock) {
+      return (this.externallyManagedInitMethods != null &&
+          this.externallyManagedInitMethods.contains(initMethod));
     }
+  }
 
-
-    @Override
-    public String getParentName() {
-        return null;
+  public void registerExternallyManagedDestroyMethod(String destroyMethod) {
+    synchronized (this.postProcessingLock) {
+      if (this.externallyManagedDestroyMethods == null) {
+        this.externallyManagedDestroyMethods = new HashSet<String>(1);
+      }
+      this.externallyManagedDestroyMethods.add(destroyMethod);
     }
+  }
 
-    @Override
-    public void setParentName(String parentName) {
-        if (parentName != null) {
-            throw new IllegalArgumentException("Root bean cannot be changed into a child bean with parent reference");
-        }
+  public boolean isExternallyManagedDestroyMethod(String destroyMethod) {
+    synchronized (this.postProcessingLock) {
+      return (this.externallyManagedDestroyMethods != null &&
+          this.externallyManagedDestroyMethods.contains(destroyMethod));
     }
-
-    /**
-     * Register a target definition that is being decorated by this bean definition.
-     */
-    public void setDecoratedDefinition(BeanDefinitionHolder decoratedDefinition) {
-        this.decoratedDefinition = decoratedDefinition;
-    }
-
-    /**
-     * Return the target definition that is being decorated by this bean definition, if any.
-     */
-    public BeanDefinitionHolder getDecoratedDefinition() {
-        return this.decoratedDefinition;
-    }
-
-    /**
-     * Specify the {@link AnnotatedElement} defining qualifiers,
-     * to be used instead of the target class or factory method.
-     *
-     * @see #setTargetType(ResolvableType)
-     * @see #getResolvedFactoryMethod()
-     * @since 4.3.3
-     */
-    public void setQualifiedElement(AnnotatedElement qualifiedElement) {
-        this.qualifiedElement = qualifiedElement;
-    }
-
-    /**
-     * Return the {@link AnnotatedElement} defining qualifiers, if any.
-     * Otherwise, the factory method and target class will be checked.
-     *
-     * @since 4.3.3
-     */
-    public AnnotatedElement getQualifiedElement() {
-        return this.qualifiedElement;
-    }
-
-    /**
-     * Specify a generics-containing target type of this bean definition, if known in advance.
-     *
-     * @since 4.3.3
-     */
-    public void setTargetType(ResolvableType targetType) {
-        this.targetType = targetType;
-    }
-
-    /**
-     * Specify the target type of this bean definition, if known in advance.
-     *
-     * @since 3.2.2
-     */
-    public void setTargetType(Class<?> targetType) {
-        this.targetType = (targetType != null ? ResolvableType.forClass(targetType) : null);
-    }
-
-    /**
-     * Return the target type of this bean definition, if known
-     * (either specified in advance or resolved on first instantiation).
-     *
-     * @since 3.2.2
-     */
-    public Class<?> getTargetType() {
-        if (this.resolvedTargetType != null) {
-            return this.resolvedTargetType;
-        }
-        return (this.targetType != null ? this.targetType.resolve() : null);
-    }
-
-    /**
-     * Specify a factory method name that refers to a non-overloaded method.
-     */
-    public void setUniqueFactoryMethodName(String name) {
-        Assert.hasText(name, "Factory method name must not be empty");
-        setFactoryMethodName(name);
-        this.isFactoryMethodUnique = true;
-    }
-
-    /**
-     * Check whether the given candidate qualifies as a factory method.
-     */
-    public boolean isFactoryMethod(Method candidate) {
-        return (candidate != null && candidate.getName().equals(getFactoryMethodName()));
-    }
-
-    /**
-     * Return the resolved factory method as a Java Method object, if available.
-     *
-     * @return the factory method, or {@code null} if not found or not resolved yet
-     */
-    public Method getResolvedFactoryMethod() {
-        synchronized (this.constructorArgumentLock) {
-            Object candidate = this.resolvedConstructorOrFactoryMethod;
-            return (candidate instanceof Method ? (Method) candidate : null);
-        }
-    }
-
-    public void registerExternallyManagedConfigMember(Member configMember) {
-        synchronized (this.postProcessingLock) {
-            if (this.externallyManagedConfigMembers == null) {
-                this.externallyManagedConfigMembers = new HashSet<Member>(1);
-            }
-            this.externallyManagedConfigMembers.add(configMember);
-        }
-    }
-
-    public boolean isExternallyManagedConfigMember(Member configMember) {
-        synchronized (this.postProcessingLock) {
-            return (this.externallyManagedConfigMembers != null &&
-                    this.externallyManagedConfigMembers.contains(configMember));
-        }
-    }
-
-    public void registerExternallyManagedInitMethod(String initMethod) {
-        synchronized (this.postProcessingLock) {
-            if (this.externallyManagedInitMethods == null) {
-                this.externallyManagedInitMethods = new HashSet<String>(1);
-            }
-            this.externallyManagedInitMethods.add(initMethod);
-        }
-    }
-
-    public boolean isExternallyManagedInitMethod(String initMethod) {
-        synchronized (this.postProcessingLock) {
-            return (this.externallyManagedInitMethods != null &&
-                    this.externallyManagedInitMethods.contains(initMethod));
-        }
-    }
-
-    public void registerExternallyManagedDestroyMethod(String destroyMethod) {
-        synchronized (this.postProcessingLock) {
-            if (this.externallyManagedDestroyMethods == null) {
-                this.externallyManagedDestroyMethods = new HashSet<String>(1);
-            }
-            this.externallyManagedDestroyMethods.add(destroyMethod);
-        }
-    }
-
-    public boolean isExternallyManagedDestroyMethod(String destroyMethod) {
-        synchronized (this.postProcessingLock) {
-            return (this.externallyManagedDestroyMethods != null &&
-                    this.externallyManagedDestroyMethods.contains(destroyMethod));
-        }
-    }
+  }
 
 
-    @Override
-    public RootBeanDefinition cloneBeanDefinition() {
-        return new RootBeanDefinition(this);
-    }
+  @Override
+  public RootBeanDefinition cloneBeanDefinition() {
+    return new RootBeanDefinition(this);
+  }
 
-    @Override
-    public boolean equals(Object other) {
-        return (this == other || (other instanceof RootBeanDefinition && super.equals(other)));
-    }
+  @Override
+  public boolean equals(Object other) {
+    return (this == other || (other instanceof RootBeanDefinition && super.equals(other)));
+  }
 
-    @Override
-    public String toString() {
-        return "Root bean: " + super.toString();
-    }
+  @Override
+  public String toString() {
+    return "Root bean: " + super.toString();
+  }
 
 }
