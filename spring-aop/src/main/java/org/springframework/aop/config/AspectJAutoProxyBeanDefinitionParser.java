@@ -43,7 +43,13 @@ class AspectJAutoProxyBeanDefinitionParser implements BeanDefinitionParser {
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
 		//注册 AspectJAnnotationAutoProxyCreator
 		AopNamespaceUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(parserContext, element);
-		//对于注解中子类的处理
+		/*
+		对于注解中子类的处理
+		<aop:aspectj-autoproxy proxy-target-class="true" expose-proxy="true">
+			<aop:include></aop:include>
+		</aop:aspectj-autoproxy>
+		xml可以写成上面这样,下面的方法就是在在解析这种写法
+		 */
 		extendBeanDefinition(element, parserContext);
 		return null;
 	}

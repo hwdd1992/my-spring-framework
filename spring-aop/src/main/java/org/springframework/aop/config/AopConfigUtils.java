@@ -102,6 +102,7 @@ public abstract class AopConfigUtils {
 	public static void forceAutoProxyCreatorToUseClassProxying(BeanDefinitionRegistry registry) {
 		if (registry.containsBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME)) {
 			BeanDefinition definition = registry.getBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME);
+			//增加属性 proxyTargetClass
 			definition.getPropertyValues().add("proxyTargetClass", Boolean.TRUE);
 		}
 	}
@@ -109,6 +110,7 @@ public abstract class AopConfigUtils {
 	public static void forceAutoProxyCreatorToExposeProxy(BeanDefinitionRegistry registry) {
 		if (registry.containsBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME)) {
 			BeanDefinition definition = registry.getBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME);
+			//增加 exposeProxy 属性
 			definition.getPropertyValues().add("exposeProxy", Boolean.TRUE);
 		}
 	}
@@ -148,6 +150,7 @@ public abstract class AopConfigUtils {
 	}
 
 	private static int findPriorityForClass(@Nullable String className) {
+		//列表下表就是优先级
 		for (int i = 0; i < APC_PRIORITY_LIST.size(); i++) {
 			Class<?> clazz = APC_PRIORITY_LIST.get(i);
 			if (clazz.getName().equals(className)) {
