@@ -83,7 +83,9 @@ final class InstantiationModelAwarePointcutAdvisorImpl
 	public InstantiationModelAwarePointcutAdvisorImpl(AspectJExpressionPointcut declaredPointcut,
 			Method aspectJAdviceMethod, AspectJAdvisorFactory aspectJAdvisorFactory,
 			MetadataAwareAspectInstanceFactory aspectInstanceFactory, int declarationOrder, String aspectName) {
-
+		/*
+		封装过程只是简单的将信息封装在类中,所有的信息单纯的赋值
+		 */
 		this.declaredPointcut = declaredPointcut;
 		this.declaringClass = aspectJAdviceMethod.getDeclaringClass();
 		this.methodName = aspectJAdviceMethod.getName();
@@ -110,6 +112,10 @@ final class InstantiationModelAwarePointcutAdvisorImpl
 			// A singleton aspect.
 			this.pointcut = this.declaredPointcut;
 			this.lazy = false;
+			/*
+			不同的增强所体现的逻辑是不同的,比如@Before("test()")与@After("test()")标签的不同
+			就是增强器增强的位置不同,所以就需要不同的增强器内完成不同的逻辑
+			 */
 			this.instantiatedAdvice = instantiateAdvice(this.declaredPointcut);
 		}
 	}
