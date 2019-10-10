@@ -17,6 +17,7 @@
 package org.springframework.web.filter;
 
 import java.io.IOException;
+
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -247,7 +248,7 @@ public abstract class OncePerRequestFilter extends GenericFilterBean {
 	protected void doFilterNestedErrorDispatch(HttpServletRequest request, HttpServletResponse response,
 			FilterChain filterChain) throws ServletException, IOException {
 
-		doFilter(request, response, filterChain);
+		filterChain.doFilter(request, response);
 	}
 
 }

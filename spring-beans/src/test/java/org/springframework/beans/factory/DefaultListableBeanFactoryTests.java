@@ -38,6 +38,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import javax.annotation.Priority;
 import javax.security.auth.Subject;
 
@@ -793,24 +795,22 @@ public class DefaultListableBeanFactoryTests {
 	}
 
 	@Test
+	public void testAliasChaining() {
+		lbf.registerBeanDefinition("test", new RootBeanDefinition(NestedTestBean.class));
+		lbf.registerAlias("test", "testAlias");
+		lbf.registerAlias("testAlias", "testAlias2");
+		lbf.registerAlias("testAlias2", "testAlias3");
+		Object bean = lbf.getBean("test");
+		assertSame(bean, lbf.getBean("testAlias"));
+		assertSame(bean, lbf.getBean("testAlias2"));
+		assertSame(bean, lbf.getBean("testAlias3"));
+	}
+
+	@Test
 	public void testBeanDefinitionOverriding() {
 		lbf.registerBeanDefinition("test", new RootBeanDefinition(TestBean.class));
 		lbf.registerBeanDefinition("test", new RootBeanDefinition(NestedTestBean.class));
 		lbf.registerAlias("otherTest", "test2");
-		lbf.registerAlias("test", "test2");
-		assertTrue(lbf.getBean("test") instanceof NestedTestBean);
-		assertTrue(lbf.getBean("test2") instanceof NestedTestBean);
-	}
-
-	@Test
-	public void testBeanDefinitionRemoval() {
-		lbf.setAllowBeanDefinitionOverriding(false);
-		lbf.registerBeanDefinition("test", new RootBeanDefinition(TestBean.class));
-		lbf.registerAlias("test", "test2");
-		lbf.preInstantiateSingletons();
-		lbf.removeBeanDefinition("test");
-		lbf.removeAlias("test2");
-		lbf.registerBeanDefinition("test", new RootBeanDefinition(NestedTestBean.class));
 		lbf.registerAlias("test", "test2");
 		assertTrue(lbf.getBean("test") instanceof NestedTestBean);
 		assertTrue(lbf.getBean("test2") instanceof NestedTestBean);
@@ -844,15 +844,55 @@ public class DefaultListableBeanFactoryTests {
 	}
 
 	@Test
-	public void testAliasChaining() {
+	public void beanDefinitionOverridingWithConstructorArgumentMismatch() {
+		RootBeanDefinition bd1 = new RootBeanDefinition(NestedTestBean.class);
+		bd1.getConstructorArgumentValues().addIndexedArgumentValue(1, "value1");
+		lbf.registerBeanDefinition("test", bd1);
+		RootBeanDefinition bd2 = new RootBeanDefinition(NestedTestBean.class);
+		bd2.getConstructorArgumentValues().addIndexedArgumentValue(0, "value0");
+		lbf.registerBeanDefinition("test", bd2);
+		assertTrue(lbf.getBean("test") instanceof NestedTestBean);
+		assertEquals("value0", lbf.getBean("test", NestedTestBean.class).getCompany());
+	}
+
+	@Test
+	public void testBeanDefinitionRemoval() {
+		lbf.setAllowBeanDefinitionOverriding(false);
+		lbf.registerBeanDefinition("test", new RootBeanDefinition(TestBean.class));
+		lbf.registerAlias("test", "test2");
+		lbf.preInstantiateSingletons();
+		lbf.removeBeanDefinition("test");
+		lbf.removeAlias("test2");
 		lbf.registerBeanDefinition("test", new RootBeanDefinition(NestedTestBean.class));
-		lbf.registerAlias("test", "testAlias");
-		lbf.registerAlias("testAlias", "testAlias2");
-		lbf.registerAlias("testAlias2", "testAlias3");
-		Object bean = lbf.getBean("test");
-		assertSame(bean, lbf.getBean("testAlias"));
-		assertSame(bean, lbf.getBean("testAlias2"));
-		assertSame(bean, lbf.getBean("testAlias3"));
+		lbf.registerAlias("test", "test2");
+		assertTrue(lbf.getBean("test") instanceof NestedTestBean);
+		assertTrue(lbf.getBean("test2") instanceof NestedTestBean);
+	}
+
+	@Test // gh-23542
+	public void concurrentBeanDefinitionRemoval() {
+		final int MAX = 200;
+		lbf.setAllowBeanDefinitionOverriding(false);
+
+		// Register the bean definitions before invoking preInstantiateSingletons()
+		// to simulate realistic usage of an ApplicationContext; otherwise, the bean
+		// factory thinks it's an "empty" factory which causes this test to fail in
+		// an unrealistic manner.
+		IntStream.range(0, MAX).forEach(this::registerTestBean);
+		lbf.preInstantiateSingletons();
+
+		// This test is considered successful if the following does not result in an exception.
+		IntStream.range(0, MAX).parallel().forEach(this::removeTestBean);
+	}
+
+	private void registerTestBean(int i) {
+		String name = "test" + i;
+		lbf.registerBeanDefinition(name, new RootBeanDefinition(TestBean.class));
+	}
+
+	private void removeTestBean(int i) {
+		String name = "test" + i;
+		lbf.removeBeanDefinition(name);
 	}
 
 	@Test
