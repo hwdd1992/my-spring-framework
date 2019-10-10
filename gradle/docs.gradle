@@ -45,7 +45,8 @@ task api(type: Javadoc) {
 	doFirst {
 		classpath = files(
 				// ensure the javadoc process can resolve types compiled from .aj sources
-				project(":spring-aspects").sourceSets.main.output
+//				project(":spring-aspects").sourceSets.main.output
+				project(":spring-aop").sourceSets.main.output
 		)
 		classpath += files(subprojects.collect { it.sourceSets.main.compileClasspath })
 	}
@@ -92,11 +93,11 @@ asciidoctor {
 	logDocuments = true
 	backends = ["html5"]
 	// only ouput PDF documentation for non-SNAPSHOT builds
-	if(!project.getVersion().toString().contains("BUILD-SNAPSHOT")) {
+	if (!project.getVersion().toString().contains("BUILD-SNAPSHOT")) {
 		backends += "pdf"
 	}
 	options doctype: 'book', eruby: 'erubis'
-	attributes  'icons': 'font',
+	attributes 'icons': 'font',
 			'idprefix': '',
 			'idseparator': '-',
 			docinfo: '',
@@ -121,19 +122,19 @@ task docsZip(type: Zip, dependsOn: ['api', 'asciidoctor', 'dokka']) {
 		include "changelog.txt"
 	}
 
-	from (api) {
+	from(api) {
 		into "javadoc-api"
 	}
 
-	from ("$asciidoctor.outputDir/html5") {
+	from("$asciidoctor.outputDir/html5") {
 		into "spring-framework-reference"
 	}
 
-	from ("$asciidoctor.outputDir/pdf") {
+	from("$asciidoctor.outputDir/pdf") {
 		into "spring-framework-reference/pdf"
 	}
 
-	from (dokka) {
+	from(dokka) {
 		into "kdoc-api"
 	}
 }
@@ -159,7 +160,7 @@ task schemaZip(type: Zip) {
 				it.path.endsWith(schemas.get(key))
 			}
 			assert xsdFile != null
-			into (shortName) {
+			into(shortName) {
 				from xsdFile.path
 			}
 		}
@@ -193,7 +194,7 @@ task distZip(type: Zip, dependsOn: [docsZip, schemaZip]) {
 	}
 
 	moduleProjects.each { subproject ->
-		into ("${baseDir}/libs") {
+		into("${baseDir}/libs") {
 			from subproject.jar
 			if (subproject.tasks.findByPath("sourcesJar")) {
 				from subproject.sourcesJar
