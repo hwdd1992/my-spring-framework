@@ -78,7 +78,16 @@ public abstract class AopNamespaceUtils {
 		 */
         BeanDefinition beanDefinition = AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(
                 parserContext.getRegistry(), parserContext.extractSource(sourceElement));
-		//对于proxy-target-class 以及 expose-proxy属性的处理
+		/*
+		Spring AOP 部分使用JDK动态代理或者CGLIB来为目标对象创建代理(建议尽量使用JDK的动态代理).如果被代理的目标对象实现了至少一个接口,
+		则会使用JDK动态代理.所有该目标类型实现的接口都将被代理.若该目标对象没有实现任何接口,则创建一个CGLIB代理.
+		 */
+		/*
+		对于proxy-target-class 以及 expose-proxy属性的处理
+		jdk动态代理:其代理对象必须是某个接口的实现,它是通过在运行期间创建一个接口的实现类来完成对目标对象的代理
+		cglib代理:实现原理类似于jdk动态代理,只是它在运行期间生成的代理对象是针对目标类扩展的子类.cglib是高校的代码生成包,底层是依靠ASM(开源
+		的Java字节码编辑类库)操作字节码实现的,性能比JDK强
+		 */
         useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
 		/*
 			注册组件并通知,便于监听器做进一步处理,其中beanDefinition的className 为 AnnotationAwareAspectJAutoProxyCreator
