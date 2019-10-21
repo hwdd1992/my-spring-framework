@@ -239,9 +239,19 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	protected <T> T doGetBean(final String name, @Nullable final Class<T> requiredType,
 			@Nullable final Object[] args, boolean typeCheckOnly) throws BeansException {
 
+		//获取对应的beanName
 		final String beanName = transformedBeanName(name);
 		Object bean;
 
+		/*
+		 * 检查缓冲中或者实例工厂中是否有对应的实例
+		 * 为什么会首先使用这段代码呢
+		 * 因为在创建单例bean的时候会存在依赖注入的情况,而在创建依赖的时候为了避免循环依赖,
+		 * Spring创建bean的原则是不等 bean 创建完成就会将创建 bean 的 objectFactory 提早曝光
+		 * 也就是 objectFactory 加入到缓存中,一旦下一个 bean 创建的时候需要依赖上 bean 则直接调用
+		 * objectFactory
+		 */
+		// 从缓存或 singletonFactories中的objectFactory中获取
 		// Eagerly check singleton cache for manually registered singletons.
 		Object sharedInstance = getSingleton(beanName);
 		if (sharedInstance != null && args == null) {
@@ -254,6 +264,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					logger.trace("Returning cached instance of singleton bean '" + beanName + "'");
 				}
 			}
+			//返回对应的实例,有时候存在诸如 BeanFactory 的情况并不是返回实例本身而是返回指定方法返回的实例
 			bean = getObjectForBeanInstance(sharedInstance, name, beanName, null);
 		}
 
@@ -267,6 +278,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			// Check if bean definition exists in this factory.
 			BeanFactory parentBeanFactory = getParentBeanFactory();
 			if (parentBeanFactory != null && !containsBeanDefinition(beanName)) {
+				//如果 beanDefinitionMap中不包括 beanName ,就尝试从 parentBeanFactory 查找
 				// Not found -> check parent.
 				String nameToLookup = originalBeanName(name);
 				if (parentBeanFactory instanceof AbstractBeanFactory) {
@@ -286,22 +298,29 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				}
 			}
 
+			//如果不是仅仅做类型检查而是创建bean,这里要进行记录
 			if (!typeCheckOnly) {
 				markBeanAsCreated(beanName);
 			}
 
 			try {
+				/*
+				将存储 xml 配置文件的 GernericBeanDefinition 转换为 RootBeanDefinition ,
+				如果指定的 beanName 是子 bean 的话同时会合并父类的属性
+				 */
 				final RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
 				checkMergedBeanDefinition(mbd, beanName, args);
 
 				// Guarantee initialization of beans that the current bean depends on.
 				String[] dependsOn = mbd.getDependsOn();
+				//如果存在依赖则需要递归实例化依赖的bean
 				if (dependsOn != null) {
 					for (String dep : dependsOn) {
 						if (isDependent(beanName, dep)) {
 							throw new BeanCreationException(mbd.getResourceDescription(), beanName,
 									"Circular depends-on relationship between '" + beanName + "' and '" + dep + "'");
 						}
+						//缓存依赖调用
 						registerDependentBean(dep, beanName);
 						try {
 							getBean(dep);
@@ -313,6 +332,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					}
 				}
 
+				//实例化依赖的 bean 后就可以创建mbd本身了
 				// Create bean instance.
 				if (mbd.isSingleton()) {
 					sharedInstance = getSingleton(beanName, () -> {
