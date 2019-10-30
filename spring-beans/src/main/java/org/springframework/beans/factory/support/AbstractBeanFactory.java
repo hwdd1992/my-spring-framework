@@ -248,7 +248,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		 * 为什么会首先使用这段代码呢
 		 * 因为在创建单例bean的时候会存在依赖注入的情况,而在创建依赖的时候为了避免循环依赖,
 		 * Spring创建bean的原则是不等 bean 创建完成就会将创建 bean 的 objectFactory 提早曝光
-		 * 也就是 objectFactory 加入到缓存中,一旦下一个 bean 创建的时候需要依赖上 bean 则直接调用
+		 * 也就是 objectFactory 加入到缓存中,一旦下一个 bean 创建的时候需要依赖上一个 bean 则直接调用
 		 * objectFactory
 		 */
 		// 从缓存或 singletonFactories中的objectFactory中获取
@@ -272,6 +272,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			// Fail if we're already creating this bean instance:
 			// We're assumably within a circular reference.
 			if (isPrototypeCurrentlyInCreation(beanName)) {
+				//只有在单例情况下才会尝试解决循环依赖
 				throw new BeanCurrentlyInCreationException(beanName);
 			}
 
@@ -335,6 +336,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				//实例化依赖的 bean 后就可以创建mbd本身了
 				// Create bean instance.
 				if (mbd.isSingleton()) {
+					//以 singleton 模式创建 bean
 					sharedInstance = getSingleton(beanName, () -> {
 						try {
 							return createBean(beanName, mbd, args);
@@ -351,6 +353,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				}
 
 				else if (mbd.isPrototype()) {
+					// 以 Prototype 模式创建 bean
 					// It's a prototype -> create a new instance.
 					Object prototypeInstance = null;
 					try {
@@ -364,6 +367,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				}
 
 				else {
+					// 以 scope 指定的模式创建 bean.
 					String scopeName = mbd.getScope();
 					final Scope scope = this.scopes.get(scopeName);
 					if (scope == null) {
@@ -395,6 +399,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			}
 		}
 
+		//检查需要的类型是否符合 bean 的实际类型.
 		// Check if required type matches the type of the actual bean instance.
 		if (requiredType != null && !requiredType.isInstance(bean)) {
 			try {
@@ -1150,6 +1155,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * @return the transformed bean name
 	 */
 	protected String transformedBeanName(String name) {
+		/*
+		为什么需要转换 beanName ?
+		1. 传入的参数可能是 factory bean
+		2. 也有可能是别名
+		 */
 		return canonicalName(BeanFactoryUtils.transformedBeanName(name));
 	}
 

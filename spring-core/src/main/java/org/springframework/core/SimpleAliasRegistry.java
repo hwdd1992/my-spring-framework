@@ -212,6 +212,7 @@ public class SimpleAliasRegistry implements AliasRegistry {
 	 * @return the transformed name
 	 */
 	public String canonicalName(String name) {
+		//解析别名name
 		String canonicalName = name;
 		// Handle aliasing...
 		String resolvedName;
