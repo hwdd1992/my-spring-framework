@@ -26,6 +26,8 @@ import java.io.Writer;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -345,9 +347,15 @@ public class MockHttpServletResponse implements HttpServletResponse {
 		if (maxAge >= 0) {
 			buf.append("; Max-Age=").append(maxAge);
 			buf.append("; Expires=");
-			HttpHeaders headers = new HttpHeaders();
-			headers.setExpires(maxAge > 0 ? System.currentTimeMillis() + 1000L * maxAge : 0);
-			buf.append(headers.getFirst(HttpHeaders.EXPIRES));
+			ZonedDateTime expires = (cookie instanceof MockCookie ? ((MockCookie) cookie).getExpires() : null);
+			if (expires != null) {
+				buf.append(expires.format(DateTimeFormatter.RFC_1123_DATE_TIME));
+			}
+			else {
+				HttpHeaders headers = new HttpHeaders();
+				headers.setExpires(maxAge > 0 ? System.currentTimeMillis() + 1000L * maxAge : 0);
+				buf.append(headers.getFirst(HttpHeaders.EXPIRES));
+			}
 		}
 
 		if (cookie.getSecure()) {
