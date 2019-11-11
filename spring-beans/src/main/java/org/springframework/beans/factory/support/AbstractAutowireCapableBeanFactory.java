@@ -1187,7 +1187,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         3. 如果即不存在工厂方法也不存在带有参数的构造函数,则使用默认的构造函数进行bean的实例化
          */
 
-
+        //解析 class
         // Make sure bean class is actually resolved at this point.
         Class<?> beanClass = resolveBeanClass(mbd, beanName);
 
@@ -1212,7 +1212,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         if (args == null) {
             synchronized (mbd.constructorArgumentLock) {
                 /*
-                一个类有多个构造函数,每个构造函数都有不同的参数,所以调用前需要先根据参数锁定构造函数或对应的工厂方法
+                一个类有多个构造函数,每个构造函数都有不同的参数,所以调用前需要先根据参数锁定构造函数或对应的工厂方法.
+                由于确定构造函数的参数是一个非常消耗性能的步骤,因此这里做了缓存
                  */
                 if (mbd.resolvedConstructorOrFactoryMethod != null) {
                     resolved = true;
@@ -1223,11 +1224,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         //如果已经解析过则使用解析好的构造函数方法不需要再次锁定
         if (resolved) {
             if (autowireNecessary) {
-            	//构造函数自动注入
+                //构造函数自动注入
                 return autowireConstructor(beanName, mbd, null, null);
             }
             else {
-            	//默认构造函数
+                //默认构造函数
                 return instantiateBean(beanName, mbd);
             }
         }
@@ -1237,7 +1238,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
         if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
                 mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
-        	//构造函数自动注入
+            //构造函数自动注入
             return autowireConstructor(beanName, mbd, ctors, args);
         }
 
