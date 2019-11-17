@@ -93,6 +93,12 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
     /** Set of registered singletons, containing the bean names in registration order. */
     private final Set<String> registeredSingletons = new LinkedHashSet<>(256);
 
+    /*
+    记录 bean 的加载状态,在 bean 开始创建前会将 beanName 记录在属性中,在 bean 创建结束后会将 beanName 从属性中移除.
+    不同 scope 的 bean 记录位置不同,以 singleton bean 为例
+    org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.beforeSingletonCreation
+    org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.afterSingletonCreation
+     */
     /** Names of beans that are currently in creation. */
     private final Set<String> singletonsCurrentlyInCreation =
             Collections.newSetFromMap(new ConcurrentHashMap<>(16));
