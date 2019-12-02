@@ -31,6 +31,7 @@ import org.springframework.lang.Nullable;
  * <p>Used as placeholder by AbstractApplicationContext, if the context doesn't
  * define its own MessageSource. Not intended for direct use in applications.
  *
+ * <p> 是为方便操作父MessageSource 而提供的代理类
  * @author Juergen Hoeller
  * @since 1.1.5
  * @see AbstractApplicationContext

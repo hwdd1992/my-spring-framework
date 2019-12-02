@@ -73,6 +73,8 @@ import org.springframework.util.StringUtils;
  * <p>Thanks to Thomas Achleitner for providing the initial implementation of
  * this message source!
  *
+ * <p> 提供了定时刷新功能,允许在不重启系统的情况下,更新资源的信息.
+ *
  * @author Juergen Hoeller
  * @see #setCacheSeconds
  * @see #setBasenames

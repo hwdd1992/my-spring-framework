@@ -69,6 +69,8 @@ import org.springframework.util.ClassUtils;
  * won't be called in this case either, effectively ignoring overrides in subclasses.
  * Consider implementing a JDK 9 {@code java.util.spi.ResourceBundleProvider} instead.
  *
+ * <p> 基于 java 的 ResourceBundle 类实现,允许仅通过资源名加载国际化资源
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @see #setBasenames

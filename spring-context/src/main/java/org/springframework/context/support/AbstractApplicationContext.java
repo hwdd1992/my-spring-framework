@@ -150,7 +150,6 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	public static final String APPLICATION_EVENT_MULTICASTER_BEAN_NAME = "applicationEventMulticaster";
 
-
 	static {
 		// Eagerly load the ContextClosedEvent class to avoid weird classloader issues
 		// on application shutdown in WebLogic 8.1. (Reported by Dustin Woods.)
@@ -356,6 +355,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	@Override
 	public void publishEvent(ApplicationEvent event) {
+		/*
+		当完成 ApplicationContext 初始化的时候,要通过 Spring 中的时间发布机制来
+		发出 ContextRefreshedEvent 事件,以保证对应的监听器可以做进一步的逻辑处理
+		 */
 		publishEvent(event, null);
 	}
 
@@ -542,7 +545,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				// Register bean processors that intercept bean creation.
 				registerBeanPostProcessors(beanFactory);
 
-				//为上下午初始化 Message 源,即不同语言的消息体,国际化处理
+				//为上下文初始化 Message 源,即不同语言的消息体,国际化处理
 				// Initialize message source for this context.
 				initMessageSource();
 
@@ -766,12 +769,18 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	}
 
 	/**
+	 *
 	 * Initialize the MessageSource.
 	 * Use parent's if none defined in this context.
 	 */
 	protected void initMessageSource() {
+		/*
+		主要功能是提取配置中定义的 messageSource bean(必须叫这个名字),并将其记录在Spring 的容器中
+		如果用户未设置资源文件的话,Spring 中也提供了默认的配置 DelegatingMessageSource
+		 */
 		ConfigurableListableBeanFactory beanFactory = getBeanFactory();
 		if (beanFactory.containsLocalBean(MESSAGE_SOURCE_BEAN_NAME)) {
+			//必须叫 messageSource
 			this.messageSource = beanFactory.getBean(MESSAGE_SOURCE_BEAN_NAME, MessageSource.class);
 			// Make MessageSource aware of parent MessageSource.
 			if (this.parent != null && this.messageSource instanceof HierarchicalMessageSource) {
@@ -787,6 +796,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			}
 		}
 		else {
+			//如果用户并没有定义配置文件,那么使用临时的 DelegatingMessageSource 以便于座位调用 getMessage 方法的返回
 			// Use empty MessageSource to be able to accept getMessage calls.
 			DelegatingMessageSource dms = new DelegatingMessageSource();
 			dms.setParentMessageSource(getInternalParentMessageSource());
@@ -806,6 +816,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	protected void initApplicationEventMulticaster() {
 		ConfigurableListableBeanFactory beanFactory = getBeanFactory();
 		if (beanFactory.containsLocalBean(APPLICATION_EVENT_MULTICASTER_BEAN_NAME)) {
+			//如果用户定义了事件广播器,那么使用用户自定义的事件广播器
 			this.applicationEventMulticaster =
 					beanFactory.getBean(APPLICATION_EVENT_MULTICASTER_BEAN_NAME, ApplicationEventMulticaster.class);
 			if (logger.isTraceEnabled()) {
@@ -813,6 +824,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			}
 		}
 		else {
+			//用户没有自定义事件广播器,那么使用默认的
 			this.applicationEventMulticaster = new SimpleApplicationEventMulticaster(beanFactory);
 			beanFactory.registerSingleton(APPLICATION_EVENT_MULTICASTER_BEAN_NAME, this.applicationEventMulticaster);
 			if (logger.isTraceEnabled()) {
@@ -828,6 +840,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * @see org.springframework.context.support.DefaultLifecycleProcessor
 	 */
 	protected void initLifecycleProcessor() {
+		/*
+		当 ApplicationContext 启动或停止时,它会通过 LifecycleProcessor 来与所有声明的 bean 的周期做
+		状态更新,而在 LifecycleProcessor 的使用前首先需要初始化
+		 */
 		ConfigurableListableBeanFactory beanFactory = getBeanFactory();
 		if (beanFactory.containsLocalBean(LIFECYCLE_PROCESSOR_BEAN_NAME)) {
 			this.lifecycleProcessor =
@@ -866,9 +882,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	protected void registerListeners() {
 		// Register statically specified listeners first.
 		for (ApplicationListener<?> listener : getApplicationListeners()) {
+			//通过硬编码方式注册的监听器
 			getApplicationEventMulticaster().addApplicationListener(listener);
 		}
 
+		//配置方式注册的监听器
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let post-processors apply to them!
 		String[] listenerBeanNames = getBeanNamesForType(ApplicationListener.class, true, false);
@@ -914,9 +932,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		// Stop using the temporary ClassLoader for type matching.
 		beanFactory.setTempClassLoader(null);
 
+		//冻结所有的 bean 定义,说明注册的 bean 定义将不被修改或任何进一步的处理
 		// Allow for caching all bean definition metadata, not expecting further changes.
 		beanFactory.freezeConfiguration();
 
+		//初始化非懒加载的单实例
 		// Instantiate all remaining (non-lazy-init) singletons.
 		beanFactory.preInstantiateSingletons();
 	}
@@ -927,6 +947,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * {@link org.springframework.context.event.ContextRefreshedEvent}.
 	 */
 	protected void finishRefresh() {
+		/*
+		Spring提供了 Lifecycle 接口,Lifecycle 中包含 start/stop 方法,实现才接口后 Spring 会保证在启动的时候调用其 start 方法开始
+		生命周期,并在 Spring 关闭的时候调用 stop 方法来结束生命周期,通常用来配置后台程序,在启动后一直运行(如对MQ进行轮询等).
+		而 ApplicationContext 的初始化最后正是保证了这一功能的实现.
+		 */
 		// Clear context-level resource caches (such as ASM metadata from scanning).
 		clearResourceCaches();
 
