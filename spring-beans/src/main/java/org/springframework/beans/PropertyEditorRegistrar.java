@@ -16,6 +16,8 @@
 
 package org.springframework.beans;
 
+import java.beans.PropertyEditor;
+
 /**
  * Interface for strategies that register custom
  * {@link java.beans.PropertyEditor property editors} with a
@@ -24,6 +26,9 @@ package org.springframework.beans;
  * <p>This is particularly useful when you need to use the same set of
  * property editors in several different situations: write a corresponding
  * registrar and reuse that in each case.
+ *
+ * <p> Registrar 中文意思是登记员,也就是说这个接口起到容器的作用,将属性编辑器登记处 {@link PropertyEditorRegistry} 注入其中.
+ * {@link PropertyEditorRegistry} 用于注册属性编辑器 {@link PropertyEditor}
  *
  * @author Juergen Hoeller
  * @since 1.2.6

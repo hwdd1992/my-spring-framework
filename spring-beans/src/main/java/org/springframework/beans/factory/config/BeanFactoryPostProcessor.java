@@ -37,6 +37,8 @@ import org.springframework.beans.BeansException;
  * If bean instance interaction is required, consider implementing
  * {@link BeanPostProcessor} instead.
  *
+ * <p> BeanFactoryPostProcessor 会在容器实例化任何其他的 bean 之前读取配置元数据,并有可能修改它.
+ *  在 spring 中典型应用有 {@link PropertyPlaceholderConfigurer}
  * @author Juergen Hoeller
  * @since 06.07.2003
  * @see BeanPostProcessor

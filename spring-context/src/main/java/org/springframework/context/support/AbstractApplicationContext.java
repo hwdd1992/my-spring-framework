@@ -550,7 +550,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				// Initialize event multicaster for this context.
 				initApplicationEventMulticaster();
 
-				//留给之类来初始化其它的 bean
+				//留给子类来初始化其它的 bean
 				// Initialize other special beans in specific context subclasses.
 				onRefresh();
 
@@ -674,9 +674,20 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		 */
 		beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
 
+		/*
+		BeanPostProcessor 调用时机是在 实例化 bean 时,在激活 bean 的 init-method 方法前后会调用
+		{@link org.springframework.beans.factory.config.BeanPostProcessor.postProcessBeforeInitialization}
+		{@link org.springframework.beans.factory.config.BeanPostProcessor.postProcessAfterInitialization}
+		对应的方法.
+		在激活 init-method 方法的时候 bean 已经 "new" 出来了
+		 */
 		// Configure the bean factory with context callbacks.实际上是放入一个set中
 		beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
 
+		/*
+		见 org.springframework.context.support.ApplicationContextAwareProcessor.postProcessBeforeInitialization
+		方法中的使用,已下的几个 bean 不是不能自动注入的,所以需要忽略
+		 */
 		// 设置需要忽略自动装配的几个接口
 		beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
 		beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
