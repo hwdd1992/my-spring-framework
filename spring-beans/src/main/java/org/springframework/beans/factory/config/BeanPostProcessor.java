@@ -33,6 +33,8 @@ import org.springframework.lang.Nullable;
  * while post-processors that wrap beans with proxies will normally
  * implement {@link #postProcessAfterInitialization}.
  *
+ * <p> 关于对象初始化前后的回调
+ *
  * @author Juergen Hoeller
  * @since 10.10.2003
  * @see InstantiationAwareBeanPostProcessor
@@ -43,12 +45,9 @@ import org.springframework.lang.Nullable;
 public interface BeanPostProcessor {
 
 	/**
-	 * 1. 调用这个返回的时候,已经有了bean实例对象
+	 * 1. 调用这个返回的时候,已经有了bean实例对象(且已经注入完毕)
 	 * 2. 如果bean实现了 InitializingBean 的 {@code afterPropertiesSet} 或者有自定义的 init-method方法,那么当前方法会在
 	 * 它们之前被调用
-	 * 3. 在调用这个方法之前,这个bean 对象已经填充了属性?(这个bean 已经执行过 setter 方法了?)
-	 * 4. 经过这个方法处理的 bean 对象可能是原始对象,也有可能是经过处理的对象
-	 *
 	 *
 	 * Apply this BeanPostProcessor to the given new bean instance <i>before</i> any bean
 	 * initialization callbacks (like InitializingBean's {@code afterPropertiesSet}
@@ -68,11 +67,9 @@ public interface BeanPostProcessor {
 	}
 
 	/**
-	 * 1. 同上个方法一样,调用这个方法的时候,bean 对象已经生成
+	 * 1. 同上个方法一样,调用这个方法的时候,bean 对象已经生成(并且注入完毕)
 	 * 2. 如果bean实现了 InitializingBean 的 {@code afterPropertiesSet} 或者有自定义的 init-method方法,那么当前方法
 	 * 会在它们之后被调用
-	 * 3. 在调用这个方法之前,这个bean 对象已经填充了属性?(这个bean 已经执行过 setter 方法了?)
-	 * 4. 经过这个方法处理的 bean 对象可能是原始对象,也有可能是经过处理的对象
 	 *
 	 * 5. 如果是FactoryBean, 这个回调可以被FactoryBean对象本身 和 由这个FactoryBean对象创建出来的 bean 调用.(as of Spring 2.0?)
 	 * 6. 后置处理器可以自己决定是否同时适配上述两种对象或者其中的一种

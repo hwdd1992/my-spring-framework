@@ -31,6 +31,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
  * modification. Essentially, this only applies to operations defined on the
  * {@link RootBeanDefinition} itself but not to the properties of its base classes.
  *
+ * <p> 用来将 merged BeanDefinition 暴露出来的回调
  * @author Juergen Hoeller
  * @since 2.5
  * @see org.springframework.beans.factory.config.ConfigurableBeanFactory#getMergedBeanDefinition
@@ -38,6 +39,9 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 public interface MergedBeanDefinitionPostProcessor extends BeanPostProcessor {
 
 	/**
+	 * <p> 在 bean 实例化完毕后调用, 可以用来修改 merged BeanDefinition 的一些 properties 或者用来给后续回调中缓存一些 meta 信息使用
+	 * 这个算是将 merged BeanDefinition 暴露出来的一个回调
+	 *
 	 * Post-process the given merged bean definition for the specified bean.
 	 * @param beanDefinition the merged bean definition for the bean
 	 * @param beanType the actual type of the managed bean instance

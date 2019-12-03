@@ -24,12 +24,18 @@ import org.springframework.beans.BeansException;
  * <p>The typical usage will be to invoke custom destruction callbacks on
  * specific bean types, matching corresponding initialization callbacks.
  *
+ * <p> 关于处理对象销毁的前置回调
+ * 应用实例:
+ *       ApplicationListenerDetector,这个类是用来注册 ApplicationListener 实例的,而如果销毁一个对象,不接触这里的引用会导致无法进行回收,
+ *       因此在销毁对象时,会判断如果是 ApplicationListener 要执行从监听器列表中移除掉
  * @author Juergen Hoeller
  * @since 1.0.1
  */
 public interface DestructionAwareBeanPostProcessor extends BeanPostProcessor {
 
 	/**
+	 * <p> 这里实现销毁对象的逻辑
+	 *
 	 * Apply this BeanPostProcessor to the given bean instance before its
 	 * destruction, e.g. invoking custom destruction callbacks.
 	 * <p>Like DisposableBean's {@code destroy} and a custom destroy method, this
@@ -44,6 +50,7 @@ public interface DestructionAwareBeanPostProcessor extends BeanPostProcessor {
 	void postProcessBeforeDestruction(Object bean, String beanName) throws BeansException;
 
 	/**
+	 * <p> 判断时候需要处理这个对象的销毁
 	 * Determine whether the given bean instance requires destruction by this
 	 * post-processor.
 	 * <p>The default implementation returns {@code true}. If a pre-5 implementation
