@@ -116,7 +116,9 @@ public abstract class DataSourceUtils {
 		Connection con = fetchConnection(dataSource);
 
 		if (TransactionSynchronizationManager.isSynchronizationActive()) {
+			//当前线程支持同步
 			try {
+				//在事务中使用同一数据库连接,Spring 需要保证线程中的数据库操作都是使用同一个事务连接
 				// Use same Connection for further JDBC actions within the transaction.
 				// Thread-bound object will get removed by synchronization at transaction completion.
 				ConnectionHolder holderToUse = conHolder;
@@ -126,6 +128,7 @@ public abstract class DataSourceUtils {
 				else {
 					holderToUse.setConnection(con);
 				}
+				//记录数据库连接
 				holderToUse.requested();
 				TransactionSynchronizationManager.registerSynchronization(
 						new ConnectionSynchronization(holderToUse, dataSource));
@@ -339,6 +342,9 @@ public abstract class DataSourceUtils {
 		if (dataSource != null) {
 			ConnectionHolder conHolder = (ConnectionHolder) TransactionSynchronizationManager.getResource(dataSource);
 			if (conHolder != null && connectionEquals(conHolder, con)) {
+				/*
+				当前线程存在事务的情况下说明存在共用数据库连接直接使用 ConnectionHolder 的 released 方法进行连接数减一而不是真正的释放连接
+				 */
 				// It's the transactional Connection: Don't close it.
 				conHolder.released();
 				return;

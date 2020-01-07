@@ -182,6 +182,8 @@ public @interface EnableCaching {
 	 * be upgraded to subclass proxying at the same time. This approach has no negative
 	 * impact in practice unless one is explicitly expecting one type of proxy vs another,
 	 * e.g. in tests.
+	 *
+	 * <p> 值为 false 使用 jdk 代理,为 true 时使用 cglib 代理
 	 */
 	boolean proxyTargetClass() default false;
 
@@ -194,6 +196,9 @@ public @interface EnableCaching {
 	 * since Spring's interceptor does not even kick in for such a runtime scenario.
 	 * For a more advanced mode of interception, consider switching this to
 	 * {@link AdviceMode#ASPECTJ}.
+	 *
+	 * <p> 指定 AOP 的模式,当值为 AdviceMode.PROXY 时表示使用 Spring Aop,当值为 AdviceMode.ASPECTJ
+	 * 时表示使用 ASPECTJ
 	 */
 	AdviceMode mode() default AdviceMode.PROXY;
 

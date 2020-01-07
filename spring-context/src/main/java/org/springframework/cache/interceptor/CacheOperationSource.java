@@ -33,6 +33,9 @@ import org.springframework.lang.Nullable;
 public interface CacheOperationSource {
 
 	/**
+	 *
+	 * 返回 {@code method} 入参方法上的缓存操作集合
+	 *
 	 * Return the collection of cache operations for this method,
 	 * or {@code null} if the method contains no <em>cacheable</em> annotations.
 	 * @param method the method to introspect

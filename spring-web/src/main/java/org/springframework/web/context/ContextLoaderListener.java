@@ -16,6 +16,7 @@
 
 package org.springframework.web.context;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
@@ -27,6 +28,10 @@ import javax.servlet.ServletContextListener;
  * application context via the {@link #ContextLoaderListener(WebApplicationContext)}
  * constructor, allowing for programmatic configuration in Servlet 3.0+ environments.
  * See {@link org.springframework.web.WebApplicationInitializer} for usage examples.
+ *
+ *
+ * <p> 在容器启动后({@link ServletContext} ),提供服务前会调用 {@link javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)}
+ * 方法.在 {@link ServletContext} 将要关闭时调用 {@link ServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)}
  *
  * @author Juergen Hoeller
  * @author Chris Beams

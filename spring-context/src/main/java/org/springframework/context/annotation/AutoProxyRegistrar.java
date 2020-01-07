@@ -31,6 +31,8 @@ import org.springframework.core.type.AnnotationMetadata;
  * as appropriate based on an {@code @Enable*} annotation having {@code mode} and
  * {@code proxyTargetClass} attributes set to the correct values.
  *
+ * <p> 目的是为了注册一个合适的 auto proxy creator
+ *
  * @author Chris Beams
  * @since 3.1
  * @see EnableAspectJAutoProxy
