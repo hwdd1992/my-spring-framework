@@ -84,6 +84,13 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 
 /**
+ * 解析Configuration类定义，填充ConfigurationClass对象的集合（解析单个Configuration类可能会产生任意数量的ConfigurationClass对象，
+ * 因为一个Configuration类可能会使用Import批注导入另一个ConfigurationClass对象）。
+ *
+ * 此类有助于将解析Configuration类的结构的关注与基于该模型的内容注册BeanDefinition对象的关注（需要立即注册的@ComponentScan注释除外）分开。
+ *
+ * 这种基于ASM的实现避免了反射和渴望的类加载，以便与Spring ApplicationContext中的惰性类加载有效地互操作。
+ *
  * Parses a {@link Configuration} class definition, populating a collection of
  * {@link ConfigurationClass} objects (parsing a single Configuration class may result in
  * any number of ConfigurationClass objects because one Configuration class may import
@@ -164,9 +171,11 @@ class ConfigurationClassParser {
 			BeanDefinition bd = holder.getBeanDefinition();
 			try {
 				if (bd instanceof AnnotatedBeanDefinition) {
+					//AnnotationMetadata 表示某个类上注解的集合
 					parse(((AnnotatedBeanDefinition) bd).getMetadata(), holder.getBeanName());
 				}
 				else if (bd instanceof AbstractBeanDefinition && ((AbstractBeanDefinition) bd).hasBeanClass()) {
+					//这些可能还是通过xml方式配置的,走这里
 					parse(((AbstractBeanDefinition) bd).getBeanClass(), holder.getBeanName());
 				}
 				else {
@@ -196,6 +205,7 @@ class ConfigurationClassParser {
 	}
 
 	protected final void parse(AnnotationMetadata metadata, String beanName) throws IOException {
+		//会将 带有 Configuration 注解的类转成 ConfigurationClass
 		processConfigurationClass(new ConfigurationClass(metadata, beanName));
 	}
 
@@ -216,6 +226,7 @@ class ConfigurationClassParser {
 
 	protected void processConfigurationClass(ConfigurationClass configClass) throws IOException {
 		if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
+			//没有 @Conditional 就不会跳过.如果有,就需要判断
 			return;
 		}
 
@@ -593,7 +604,7 @@ class ConfigurationClassParser {
 			catch (Throwable ex) {
 				throw new BeanDefinitionStoreException(
 						"Failed to process import candidates for configuration class [" +
-						configClass.getMetadata().getClassName() + "]", ex);
+								configClass.getMetadata().getClassName() + "]", ex);
 			}
 			finally {
 				this.importStack.pop();
@@ -701,7 +712,7 @@ class ConfigurationClassParser {
 		@Override
 		public void removeImportingClass(String importingClass) {
 			for (List<AnnotationMetadata> list : this.imports.values()) {
-				for (Iterator<AnnotationMetadata> iterator = list.iterator(); iterator.hasNext();) {
+				for (Iterator<AnnotationMetadata> iterator = list.iterator(); iterator.hasNext(); ) {
 					if (iterator.next().getClassName().equals(importingClass)) {
 						iterator.remove();
 						break;
@@ -1099,8 +1110,8 @@ class ConfigurationClassParser {
 
 		public CircularImportProblem(ConfigurationClass attemptedImport, Deque<ConfigurationClass> importStack) {
 			super(String.format("A circular @Import has been detected: " +
-					"Illegal attempt by @Configuration class '%s' to import class '%s' as '%s' is " +
-					"already present in the current import stack %s", importStack.element().getSimpleName(),
+							"Illegal attempt by @Configuration class '%s' to import class '%s' as '%s' is " +
+							"already present in the current import stack %s", importStack.element().getSimpleName(),
 					attemptedImport.getSimpleName(), attemptedImport.getSimpleName(), importStack),
 					new Location(importStack.element().getResource(), attemptedImport.getMetadata()));
 		}

@@ -74,7 +74,9 @@ class ConfigurationClassEnhancer {
 
 	// The callbacks to use. Note that these callbacks must be stateless.
 	private static final Callback[] CALLBACKS = new Callback[] {
+			//AOP原理,用于增强带有@Bean注解的方法
 			new BeanMethodInterceptor(),
+			//如果Configuration类实现了BeanFactoryAware,这里就是用于支持这种情况
 			new BeanFactoryAwareMethodInterceptor(),
 			NoOp.INSTANCE
 	};
@@ -119,11 +121,15 @@ class ConfigurationClassEnhancer {
 	 */
 	private Enhancer newEnhancer(Class<?> configSuperClass, @Nullable ClassLoader classLoader) {
 		Enhancer enhancer = new Enhancer();
+		//cglib代理类继承了原来的类
 		enhancer.setSuperclass(configSuperClass);
+		//EnhancedConfiguration 是 ConfigurationClassPostProcessor 的内部类,用于标识某个Configuration类是否被增强
+		//@see EnhancedConfigurationBeanPostProcessor
 		enhancer.setInterfaces(new Class<?>[] {EnhancedConfiguration.class});
 		enhancer.setUseFactory(false);
 		enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
 		enhancer.setStrategy(new BeanFactoryAwareGeneratorStrategy(classLoader));
+		//关键
 		enhancer.setCallbackFilter(CALLBACK_FILTER);
 		enhancer.setCallbackTypes(CALLBACK_FILTER.getCallbackTypes());
 		return enhancer;
@@ -306,6 +312,7 @@ class ConfigurationClassEnhancer {
 	private static class BeanMethodInterceptor implements MethodInterceptor, ConditionalCallback {
 
 		/**
+		 * configuration类中的 @Bean 方法,可以加上@Scope,这里有对 @Scope的支持
 		 * Enhance a {@link Bean @Bean} method to check the supplied BeanFactory for the
 		 * existence of this bean object.
 		 * @throws Throwable as a catch-all for any exception that may be thrown when invoking the

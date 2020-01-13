@@ -242,7 +242,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 	@Nullable
 	public Constructor<?>[] determineCandidateConstructors(Class<?> beanClass, final String beanName)
 			throws BeanCreationException {
-
+		//SmartInstantiationAwareBeanPostProcessor 接口定义的方法,用于寻找实例化 bean 需要的构造方法
 		// Let's check for lookup methods here...
 		if (!this.lookupMethodsChecked.contains(beanName)) {
 			try {
@@ -283,11 +283,12 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 					catch (Throwable ex) {
 						throw new BeanCreationException(beanName,
 								"Resolution of declared constructors on bean Class [" + beanClass.getName() +
-								"] from ClassLoader [" + beanClass.getClassLoader() + "] failed", ex);
+										"] from ClassLoader [" + beanClass.getClassLoader() + "] failed", ex);
 					}
 					List<Constructor<?>> candidates = new ArrayList<>(rawCandidates.length);
 					Constructor<?> requiredConstructor = null;
 					Constructor<?> defaultConstructor = null;
+					//适配 kotlin
 					Constructor<?> primaryConstructor = BeanUtils.findPrimaryConstructor(beanClass);
 					int nonSyntheticConstructors = 0;
 					for (Constructor<?> candidate : rawCandidates) {
@@ -297,6 +298,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 						else if (primaryConstructor != null) {
 							continue;
 						}
+						//在构造方法上找 @Autowired 注解
 						AnnotationAttributes ann = findAutowiredAnnotation(candidate);
 						if (ann == null) {
 							Class<?> userClass = ClassUtils.getUserClass(beanClass);
@@ -315,16 +317,16 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 							if (requiredConstructor != null) {
 								throw new BeanCreationException(beanName,
 										"Invalid autowire-marked constructor: " + candidate +
-										". Found constructor with 'required' Autowired annotation already: " +
-										requiredConstructor);
+												". Found constructor with 'required' Autowired annotation already: " +
+												requiredConstructor);
 							}
 							boolean required = determineRequiredStatus(ann);
 							if (required) {
 								if (!candidates.isEmpty()) {
 									throw new BeanCreationException(beanName,
 											"Invalid autowire-marked constructors: " + candidates +
-											". Found constructor with 'required' Autowired annotation: " +
-											candidate);
+													". Found constructor with 'required' Autowired annotation: " +
+													candidate);
 								}
 								requiredConstructor = candidate;
 							}
@@ -371,6 +373,11 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 
 	@Override
 	public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) {
+		/*
+		根据上面 AutowiredAnnotationBeanPostProcessor.postProcessMergedBeanDefinition 的说明，解析的结果最终保存为一个InjectionMetadata对象，
+		其内部含有一个InjectionMetadata.InjectedElement类型的List，
+		所以注入的过程实际上便是遍历此List调用每一个InjectionMetadata.InjectedElement的inject的过程。
+		 */
 		InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
 		try {
 			metadata.inject(bean, beanName, pvs);
@@ -418,6 +425,10 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 		// Fall back to class name as cache key, for backwards compatibility with custom callers.
 		String cacheKey = (StringUtils.hasLength(beanName) ? beanName : clazz.getName());
 		// Quick check on the concurrent map first, with minimal locking.
+		/*
+		injectionMetadataCache 使用 concurrentHashMap 的好处是,无论是有多线程在获取bean,或者bean的scope不是单例,对于 @Autowire的
+		扫描都只会有一次
+		 */
 		InjectionMetadata metadata = this.injectionMetadataCache.get(cacheKey);
 		if (InjectionMetadata.needsRefresh(metadata, clazz)) {
 			synchronized (this.injectionMetadataCache) {
@@ -426,6 +437,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 					if (metadata != null) {
 						metadata.clear(pvs);
 					}
+					//扫描 @Autowired 注解
 					metadata = buildAutowiringMetadata(clazz);
 					this.injectionMetadataCache.put(cacheKey, metadata);
 				}
@@ -438,14 +450,17 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 		List<InjectionMetadata.InjectedElement> elements = new ArrayList<>();
 		Class<?> targetClass = clazz;
 
+		//循环检测 targetClass 类及其弗雷父类
 		do {
 			final List<InjectionMetadata.InjectedElement> currElements = new ArrayList<>();
 
+			//检测 Field 上有没有 @Autowired注解,访问者模式的实现
 			ReflectionUtils.doWithLocalFields(targetClass, field -> {
 				AnnotationAttributes ann = findAutowiredAnnotation(field);
 				if (ann != null) {
 					if (Modifier.isStatic(field.getModifiers())) {
 						if (logger.isInfoEnabled()) {
+							//不支持在静态变量上使用 @Autowired 注解
 							logger.info("Autowired annotation is not supported on static fields: " + field);
 						}
 						return;
@@ -455,7 +470,26 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 				}
 			});
 
+			//检测 Method 上有没有 @Autowired注解
 			ReflectionUtils.doWithLocalMethods(targetClass, method -> {
+				/*
+				public class JavaTest {
+					private class MyList extends ArrayList {
+						//注意父类的返回类型是Object
+						@Override
+						public String get(int index) {
+							return "";
+						}
+					}
+					public static void main(String[] args) {
+						for (Method method : MyList.class.getDeclaredMethods()) {
+							System.out.println("name: " + method.getName() + ", return: " + method.getReturnType());
+						}
+					}
+				}
+				子类重写父类的方法但是返回值不同在java语言里是合法的.
+				bridge method 说的就是这种
+				 */
 				Method bridgedMethod = BridgeMethodResolver.findBridgedMethod(method);
 				if (!BridgeMethodResolver.isVisibilityBridgeMethodPair(method, bridgedMethod)) {
 					return;
@@ -464,17 +498,25 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 				if (ann != null && method.equals(ClassUtils.getMostSpecificMethod(method, clazz))) {
 					if (Modifier.isStatic(method.getModifiers())) {
 						if (logger.isInfoEnabled()) {
+							//不支持在静态方法上使用 Autowired
 							logger.info("Autowired annotation is not supported on static methods: " + method);
 						}
 						return;
 					}
 					if (method.getParameterCount() == 0) {
 						if (logger.isInfoEnabled()) {
+							//使用 @Autowired 的方法需要有参数
 							logger.info("Autowired annotation should only be used on methods with parameters: " +
 									method);
 						}
 					}
 					boolean required = determineRequiredStatus(ann);
+
+					/*
+					PropertyDescriptor
+					用于描述java bean，如果被标注@Autowire的方法是一个getter或setter方法，
+					那么Spring会保存下来其PropertyDescriptor对象，如果不是，那么就是空。
+					 */
 					PropertyDescriptor pd = BeanUtils.findPropertyForMethod(bridgedMethod, clazz);
 					currElements.add(new AutowiredMethodElement(method, required, pd));
 				}
@@ -580,6 +622,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 
 		@Override
 		protected void inject(Object bean, @Nullable String beanName, @Nullable PropertyValues pvs) throws Throwable {
+			// 注入的原理就是从容器中查找相关的依赖，用反射的方法调用Field的set方法，不在详细说了。
 			Field field = (Field) this.member;
 			Object value;
 			if (this.cached) {
@@ -645,6 +688,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 
 		@Override
 		protected void inject(Object bean, @Nullable String beanName, @Nullable PropertyValues pvs) throws Throwable {
+			//注入的原理是遍历此方法的参数列表，针对每一个参数都去容器中寻找相应的bean，之后调用Method的invoke方法即可。
 			if (checkPropertySkipping(pvs)) {
 				return;
 			}
