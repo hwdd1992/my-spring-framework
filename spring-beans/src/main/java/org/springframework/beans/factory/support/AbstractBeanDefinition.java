@@ -140,64 +140,141 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	@Nullable
 	private volatile Object beanClass;
 
+	/**
+	 * bean的作用范围
+	 */
 	@Nullable
 	private String scope = SCOPE_DEFAULT;
 
+	/**
+	 * 是否是抽象 bean
+	 */
 	private boolean abstractFlag = false;
 
+	/**
+	 * 是否延迟加载
+	 */
 	private boolean lazyInit = false;
 
+	/**
+	 * 自动注入模式,对应 bean 属性 autowire
+	 */
 	private int autowireMode = AUTOWIRE_NO;
 
+	/**
+	 * 依赖检查,spring 3.0 后弃用这个属性
+	 */
 	private int dependencyCheck = DEPENDENCY_CHECK_NONE;
 
+	/**
+	 * 用来表示一个bean的实例化依靠另一个bean先实例化
+	 */
 	@Nullable
 	private String[] dependsOn;
 
+	/**
+	 * 如果设置为false,这样容器在查找自动装配对象时,将不考虑该bean,即它不会被考虑作为其他 bean 自动装配的候选者,但是
+	 * 该 bean 本身还是可以使用自动装配来注入其他 bean 对象的.
+	 */
 	private boolean autowireCandidate = true;
 
+	/**
+	 * 自动装配时当出现多个 bean 候选者时,将作为首选择
+	 */
 	private boolean primary = false;
 
+	/**
+	 * 用于记录 Qualifier
+	 */
 	private final Map<String, AutowireCandidateQualifier> qualifiers = new LinkedHashMap<>();
 
 	@Nullable
 	private Supplier<?> instanceSupplier;
 
+	/**
+	 * 允许访问非公开的构造器和方法,程序设置
+	 */
 	private boolean nonPublicAccessAllowed = true;
 
+	/**
+	 * 是否以宽松的模式解析构造函数,默认为 true
+	 */
 	private boolean lenientConstructorResolution = true;
 
+	/**
+	 * 对应 factory-bean
+	 * <bean id="myFactorybean" class="**********"></bean>
+	 * <bean id="*** factory-bean="myFactorybean" factory-method="******"></bean>
+	 */
 	@Nullable
 	private String factoryBeanName;
 
+	/**
+	 * 对应 factory-method
+	 */
 	@Nullable
 	private String factoryMethodName;
 
+	/**
+	 * 记录构造函数注入属性
+	 */
 	@Nullable
 	private ConstructorArgumentValues constructorArgumentValues;
 
+	/**
+	 * 普通属性集合
+	 */
 	@Nullable
 	private MutablePropertyValues propertyValues;
 
+	/**
+	 * 方法重写的持有者.记录 look-method,replaced-method 元素
+	 */
 	private MethodOverrides methodOverrides = new MethodOverrides();
 
+	/**
+	 * 初始化方法 对应 init-method
+	 */
 	@Nullable
 	private String initMethodName;
 
+	/**
+	 * 销毁方法,对应 destory-method
+	 */
 	@Nullable
 	private String destroyMethodName;
 
+	/**
+	 * 是否执行 init-method 方法,程序设置
+	 */
 	private boolean enforceInitMethod = true;
 
+	/**
+	 * 是否执行 destory-method 方法,程序设置
+	 */
 	private boolean enforceDestroyMethod = true;
 
+	/**
+	 * 是否是用户定义的 bean 还是程序自己定义的,创建 AOP 时设置为 true,程序设置
+	 */
 	private boolean synthetic = false;
 
+	/**
+	 * ROLE_APPLICATION:用户
+	 * ROLE_SUPPORT: 某些复杂配置的一部分
+	 * ROLE_INFRASTRUCTURE: 完全内部使用,与用户无关
+	 */
 	private int role = BeanDefinition.ROLE_APPLICATION;
 
+	/**
+	 * bean 的描述信息
+	 */
 	@Nullable
 	private String description;
 
+	/**
+	 * 这个 bean 定义的资源
+	 */
 	@Nullable
 	private Resource resource;
 
@@ -470,6 +547,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	}
 
 	/**
+	 * 是否单例
 	 * Return whether this a <b>Singleton</b>, with a single shared instance
 	 * returned from all calls.
 	 * @see #SCOPE_SINGLETON
@@ -480,6 +558,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	}
 
 	/**
+	 * 是否原型
 	 * Return whether this a <b>Prototype</b>, with an independent instance
 	 * returned for each call.
 	 * @see #SCOPE_PROTOTYPE
@@ -1061,7 +1140,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 		if (hasMethodOverrides() && getFactoryMethodName() != null) {
 			throw new BeanDefinitionValidationException(
 					"Cannot combine factory method with container-generated method overrides: " +
-					"the factory method must create the concrete bean instance.");
+							"the factory method must create the concrete bean instance.");
 		}
 		if (hasBeanClass()) {
 			prepareMethodOverrides();
@@ -1092,7 +1171,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 		if (count == 0) {
 			throw new BeanDefinitionValidationException(
 					"Invalid method override: no method with name '" + mo.getMethodName() +
-					"' on class [" + getBeanClassName() + "]");
+							"' on class [" + getBeanClassName() + "]");
 		}
 		else if (count == 1) {
 			// Mark override as not overloaded, to avoid the overhead of arg type checking.
