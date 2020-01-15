@@ -81,7 +81,9 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 
 	/**
 	 * Determine the transaction attribute for this method invocation.
+	 * <p>确定当前方法调用的事务属性
 	 * <p>Defaults to the class's transaction attribute if no method attribute is found.
+	 * <p>如果不能根据方法找到事务属性默认返回类的事务属性
 	 * @param method the method for the current invocation (never {@code null})
 	 * @param targetClass the target class for this invocation (may be {@code null})
 	 * @return a TransactionAttribute for this method, or {@code null} if the method
@@ -142,7 +144,8 @@ public abstract class AbstractFallbackTransactionAttributeSource implements Tran
 
 	/**
 	 * Same signature as {@link #getTransactionAttribute}, but doesn't cache the result.
-	 * {@link #getTransactionAttribute} is effectively a caching decorator for this method.
+	 * <p> 与{@link #getTransactionAttribute}方法相同,但不缓存结果
+	 * <p> {@link #getTransactionAttribute} is effectively a caching decorator for this method.
 	 * <p>As of 4.1.8, this method can be overridden.
 	 * @since 4.1.8
 	 * @see #getTransactionAttribute

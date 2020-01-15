@@ -23,6 +23,7 @@ import org.springframework.transaction.TransactionDefinition;
  * This interface adds a {@code rollbackOn} specification to {@link TransactionDefinition}.
  * As custom {@code rollbackOn} is only possible with AOP, it resides in the AOP-related
  * transaction subpackage.
+ *<p>该接口将 {@code rollbackOn} 规范添加到 {@link TransactionDefinition}。 由于自定义 {@code rollbackOn}仅适用于AOP，因此它位于AOP相关的事务子包中。
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
@@ -36,6 +37,7 @@ public interface TransactionAttribute extends TransactionDefinition {
 	 * Return a qualifier value associated with this transaction attribute.
 	 * <p>This may be used for choosing a corresponding transaction manager
 	 * to process this specific transaction.
+	 * <p>这可以用于选择是适当的事务管理器来处理该特定事务。
 	 * @since 3.0
 	 */
 	@Nullable

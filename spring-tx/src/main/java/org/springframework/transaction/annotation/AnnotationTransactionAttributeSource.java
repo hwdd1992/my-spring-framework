@@ -34,6 +34,7 @@ import org.springframework.util.ClassUtils;
  * Implementation of the
  * {@link org.springframework.transaction.interceptor.TransactionAttributeSource}
  * interface for working with transaction metadata in JDK 1.5+ annotation format.
+ * <p> {@link org.springframework.transaction.interceptor.TransactionAttributeSource} 接口的实现，用于处理JDK 1.5+ 注解事务元数据。
  *
  * <p>This class reads Spring's JDK 1.5+ {@link Transactional} annotation and
  * exposes corresponding transaction attributes to Spring's transaction infrastructure.
@@ -41,6 +42,9 @@ import org.springframework.util.ClassUtils;
  * {@link javax.ejb.TransactionAttribute} annotation (if present).
  * This class may also serve as base class for a custom TransactionAttributeSource,
  * or get customized through {@link TransactionAnnotationParser} strategies.
+ * <p>当前类读取 Spring JDK 1.5 以上版本的 {@link Transactional}注解,并且暴露适当的事务属性到 Spring 的事务框架.同时也支持 JTA 1.2
+ * 版本的 {@link javax.transaction.Transactional} 和 EJB 3 版本的 {@link javax.ejb.TransactionAttribute} 注解.
+ * 此类也可用作自定义TransactionAttributeSource的基类，或通过 {@link TransactionAnnotationParser}  策略进行自定义。
  *
  * @author Colin Sampaleanu
  * @author Juergen Hoeller

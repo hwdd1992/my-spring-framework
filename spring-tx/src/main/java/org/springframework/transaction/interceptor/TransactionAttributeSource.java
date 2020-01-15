@@ -22,10 +22,10 @@ import org.springframework.lang.Nullable;
 
 /**
  * Strategy interface used by {@link TransactionInterceptor} for metadata retrieval.
- *
+ * <p>被用于 {@link TransactionInterceptor} 获取元数据
  * <p>Implementations know how to source transaction attributes, whether from configuration,
  * metadata attributes at source level (such as Java 5 annotations), or anywhere else.
- *
+ * <p> 该接口的实现知道如何从配置，源级别的元数据属性（例如Java 5注释）或其他任何位置获取事务属性。
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @since 15.04.2003
@@ -38,9 +38,12 @@ public interface TransactionAttributeSource {
 	/**
 	 * Return the transaction attribute for the given method,
 	 * or {@code null} if the method is non-transactional.
+	 *
+	 * <p> 根据给定的方法返回事务属性,如果方法没有配置事务,则返回null
+	 *
 	 * @param method the method to introspect
 	 * @param targetClass the target class (may be {@code null},
-	 * in which case the declaring class of the method must be used)
+	 * in which case the declaring class of the method must be used),不为空的就是方法的声明类
 	 * @return the matching transaction attribute, or {@code null} if none found
 	 */
 	@Nullable
