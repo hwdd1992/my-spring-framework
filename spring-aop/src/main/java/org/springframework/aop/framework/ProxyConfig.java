@@ -46,7 +46,13 @@ public class ProxyConfig implements Serializable {
 
 
 	/**
-	 * Set whether to proxy the target class directly, instead of just proxying
+	 * <p>设置是否直接代理目标类，而不是仅代理特定的接口。 默认值为“ false”。
+	 * 将此设置为“ true”可强制代理TargetSource的公开目标类。 如果该目标类是接口，则将为给定接口创建一个JDK代理。
+	 * 如果该目标类是任何其他类，则将为给定类创建CGLIB代理。
+	 *
+	 * <p>注意: 根据具体代理工厂的配置，如果未指定接口（并且未激活接口自动检测），则也将应用 proxy-target-class 行为。
+	 *
+	 * <p>Set whether to proxy the target class directly, instead of just proxying
 	 * specific interfaces. Default is "false".
 	 * <p>Set this to "true" to force proxying for the TargetSource's exposed
 	 * target class. If that target class is an interface, a JDK proxy will be
@@ -62,14 +68,19 @@ public class ProxyConfig implements Serializable {
 	}
 
 	/**
-	 * Return whether to proxy the target class directly as well as any interfaces.
+	 * <p>返回是否直接代理目标类以及任何接口。
+	 *<p> Return whether to proxy the target class directly as well as any interfaces.
 	 */
 	public boolean isProxyTargetClass() {
 		return this.proxyTargetClass;
 	}
 
 	/**
-	 * Set whether proxies should perform aggressive optimizations.
+	 * <p>设置代理是否应执行积极的优化。 代理之间“积极优化”的确切含义会有所不同，但通常会有一些权衡。 默认值为“ false”。
+	 * <p>例如，优化通常意味着在创建了代理之后通知更改不会生效。 由于这个原因，默认情况下禁用优化。 如果其他设置排除了优化，
+	 * 则“ true”的优化值可能会被忽略: 例如，如果“ exposeProxy”设置为“ true” ，并且与优化不兼容。
+	 *
+	 *<p>Set whether proxies should perform aggressive optimizations.
 	 * The exact meaning of "aggressive optimizations" will differ
 	 * between proxies, but there is usually some tradeoff.
 	 * Default is "false".
@@ -84,14 +95,17 @@ public class ProxyConfig implements Serializable {
 	}
 
 	/**
-	 * Return whether proxies should perform aggressive optimizations.
+	 * <p>返回代理是否应执行积极的优化。
+	 * <p>Return whether proxies should perform aggressive optimizations.
 	 */
 	public boolean isOptimize() {
 		return this.optimize;
 	}
 
 	/**
-	 * Set whether proxies created by this configuration should be prevented
+	 * <p>设置是否应防止根据此配置创建的代理强制转换为 Advised, 用来查询代理状态。
+	 * <p>默认 false,意味着 AOP 代理可以被强制转换为 Advised
+	 * <p>Set whether proxies created by this configuration should be prevented
 	 * from being cast to {@link Advised} to query proxy status.
 	 * <p>Default is "false", meaning that any AOP proxy can be cast to
 	 * {@link Advised}.
@@ -101,7 +115,8 @@ public class ProxyConfig implements Serializable {
 	}
 
 	/**
-	 * Return whether proxies created by this configuration should be
+	 * <p> 返回是否应防止将此配置创建的代理强制转换为 Advised。
+	 * <p> Return whether proxies created by this configuration should be
 	 * prevented from being cast to {@link Advised}.
 	 */
 	public boolean isOpaque() {
@@ -109,7 +124,10 @@ public class ProxyConfig implements Serializable {
 	}
 
 	/**
-	 * Set whether the proxy should be exposed by the AOP framework as a
+	 * <p>设置代理是否应由AOP框架公开为ThreadLocal以便通过AopContext类进行检索。
+	 * 如果被增强对象需要调用自己的另一个被增强方法，这将很有用。（如果使用this调用自身的另外一个方法，则这个调用不会被增强）。
+	 * <p>默认值为“ false”，以避免不必要的额外拦截。 这意味着，不能保证 AopContext 访问在被增强对象的任何方法中都能一致地工作。
+	 * <p>Set whether the proxy should be exposed by the AOP framework as a
 	 * ThreadLocal for retrieval via the AopContext class. This is useful
 	 * if an advised object needs to call another advised method on itself.
 	 * (If it uses {@code this}, the invocation will not be advised).
@@ -122,6 +140,7 @@ public class ProxyConfig implements Serializable {
 	}
 
 	/**
+	 *
 	 * Return whether the AOP proxy will expose the AOP proxy for
 	 * each invocation.
 	 */
@@ -130,7 +149,9 @@ public class ProxyConfig implements Serializable {
 	}
 
 	/**
-	 * Set whether this config should be frozen.
+	 * <p>设置是否应冻结此配置。
+	 * <p> 当配置被冻结,增强就无法改变.这对于优化很有用，在我们不希望调用者在转换为 Advised 之后能够操纵配置时有用。
+	 * <p>Set whether this config should be frozen.
 	 * <p>When a config is frozen, no advice changes can be made. This is
 	 * useful for optimization, and useful when we don't want callers to
 	 * be able to manipulate configuration after casting to Advised.

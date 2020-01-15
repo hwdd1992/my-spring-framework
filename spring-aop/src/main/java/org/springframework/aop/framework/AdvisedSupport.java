@@ -43,16 +43,19 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 
 /**
- * Base class for AOP proxy configuration managers.
+ * <p>Base class for AOP proxy configuration managers.
  * These are not themselves AOP proxies, but subclasses of this class are
  * normally factories from which AOP proxy instances are obtained directly.
+ * <p>AOP代理配置管理器的基类。 这些本身不是AOP代理，但是此类的子类通常是工厂，可以直接从中获取AOP代理实例。
  *
  * <p>This class frees subclasses of the housekeeping of Advices
  * and Advisors, but doesn't actually implement proxy creation
  * methods, which are provided by subclasses.
+ * <p>AdvisedSupport 使子类免于 Advices 和 Advisor 的管理，但是实际上并没有实现代理创建方法，这些方法是由子类提供的。
  *
  * <p>This class is serializable; subclasses need not be.
  * This class is used to hold snapshots of proxies.
+ * <p>该类是可序列化的。 子类不需要。 此类用于保存代理的快照。
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
@@ -80,24 +83,30 @@ public class AdvisedSupport extends ProxyConfig implements Advised {
 	/** The AdvisorChainFactory to use. */
 	AdvisorChainFactory advisorChainFactory = new DefaultAdvisorChainFactory();
 
-	/** Cache with Method as key and advisor chain List as value. */
+	/**
+	 * <p> Cache with Method as key and advisor chain List as value.
+	 * <p> 方法作为 key,增强链作为值
+	 * */
 	private transient Map<MethodCacheKey, List<Object>> methodCache;
 
 	/**
-	 * Interfaces to be implemented by the proxy. Held in List to keep the order
+	 * <p>Interfaces to be implemented by the proxy. Held in List to keep the order
 	 * of registration, to create JDK proxy with specified order of interfaces.
+	 * <p>代理要实现的接口。 保留在List中以保持注册顺序，以指定的接口顺序创建JDK代理。
 	 */
 	private List<Class<?>> interfaces = new ArrayList<>();
 
 	/**
-	 * List of Advisors. If an Advice is added, it will be wrapped
+	 * <p>List of Advisors. If an Advice is added, it will be wrapped
 	 * in an Advisor before being added to this List.
+	 * <p> Advisors 集合。 如果添加了 Advice,则将其包装在 Advisor 中，然后再添加到此列表中
 	 */
 	private List<Advisor> advisors = new ArrayList<>();
 
 	/**
-	 * Array updated on changes to the advisors list, which is easier
+	 * <p>Array updated on changes to the advisors list, which is easier
 	 * to manipulate internally.
+	 * <p>数组根据对 {@code advisors} 的更改而更新，用在内部更易于操作。
 	 */
 	private Advisor[] advisorArray = new Advisor[0];
 
@@ -140,15 +149,18 @@ public class AdvisedSupport extends ProxyConfig implements Advised {
 	}
 
 	/**
-	 * Set a target class to be proxied, indicating that the proxy
+	 * <p>Set a target class to be proxied, indicating that the proxy
 	 * should be castable to the given class.
+	 * <p>设置要代理的目标类，指示代理应可转换为给定类
 	 * <p>Internally, an {@link org.springframework.aop.target.EmptyTargetSource}
 	 * for the given target class will be used. The kind of proxy needed
 	 * will be determined on actual creation of the proxy.
+	 * <p>在内部，EmptyTargetSource 将用于给定的类。 所需的代理类型将在实际创建代理时确定。
 	 * <p>This is a replacement for setting a "targetSource" or "target",
 	 * for the case where we want a proxy based on a target class
 	 * (which can be an interface or a concrete class) without having
 	 * a fully capable TargetSource available.
+	 * <p>对于我们想要基于目标类（可以是接口或具体类）的代理而又没有完全可用的TargetSource的情况，这是设置“ targetSource”或“ target”的替代。
 	 * @see #setTargetSource
 	 * @see #setTarget
 	 */
@@ -472,6 +484,7 @@ public class AdvisedSupport extends ProxyConfig implements Advised {
 	/**
 	 * Determine a list of {@link org.aopalliance.intercept.MethodInterceptor} objects
 	 * for the given method, based on this configuration.
+	 * <p>根据此配置，确定给定方法的 MethodInterceptor 对象列表。
 	 * @param method the proxied method
 	 * @param targetClass the target class
 	 * @return a List of MethodInterceptors (may also include InterceptorAndDynamicMethodMatchers)

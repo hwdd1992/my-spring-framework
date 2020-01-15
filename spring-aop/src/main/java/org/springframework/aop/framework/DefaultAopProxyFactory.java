@@ -24,9 +24,10 @@ import org.springframework.aop.SpringProxy;
 /**
  * Default {@link AopProxyFactory} implementation, creating either a CGLIB proxy
  * or a JDK dynamic proxy.
- *
+ * <p>默认的 {@link AopProxyFactory} 实现,可以创建 CGLIB 或者 JDK 动态代理
  * <p>Creates a CGLIB proxy if one the following is true for a given
  * {@link AdvisedSupport} instance:
+ * <p> 对于给定的 {@link AdvisedSupport} 对象,如果符合以下中的一条,就会创建 CGLIB 代理
  * <ul>
  * <li>the {@code optimize} flag is set
  * <li>the {@code proxyTargetClass} flag is set
@@ -35,6 +36,7 @@ import org.springframework.aop.SpringProxy;
  *
  * <p>In general, specify {@code proxyTargetClass} to enforce a CGLIB proxy,
  * or specify one or more interfaces to use a JDK dynamic proxy.
+ * <p> 一般,通过设置 {@code proxyTargetClass} 来强制使用 CGLIB 代理,或者通过指定一个或多个需要被代理的接口来使用 JDK 动态代理
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
@@ -55,8 +57,10 @@ public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
 						"Either an interface or a target is required for proxy creation.");
 			}
 			if (targetClass.isInterface() || Proxy.isProxyClass(targetClass)) {
+				//被代理类是接口或者被代理类是 JDK 动态代理生成的类
 				return new JdkDynamicAopProxy(config);
 			}
+			//cglib 代理
 			return new ObjenesisCglibAopProxy(config);
 		}
 		else {

@@ -24,6 +24,7 @@ import org.springframework.util.Assert;
 /**
  * Base class for proxy factories.
  * Provides convenient access to a configurable AopProxyFactory.
+ * <p>代理工厂的基类。 提供对可配置AopProxyFactory的便捷访问。
  *
  * @author Juergen Hoeller
  * @since 2.0.3
@@ -97,6 +98,7 @@ public class ProxyCreatorSupport extends AdvisedSupport {
 	/**
 	 * Subclasses should call this to get a new AOP proxy. They should <b>not</b>
 	 * create an AOP proxy with {@code this} as an argument.
+	 * <p>子类应调用此方法以获得新的AOP代理。 他们不应以当前对象为参数创建AOP代理。
 	 */
 	protected final synchronized AopProxy createAopProxy() {
 		if (!this.active) {

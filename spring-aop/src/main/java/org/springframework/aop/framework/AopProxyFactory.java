@@ -19,8 +19,9 @@ package org.springframework.aop.framework;
 /**
  * Interface to be implemented by factories that are able to create
  * AOP proxies based on {@link AdvisedSupport} configuration objects.
- *
+ * <p>由能够基于 AdvisedSupport 配置对象创建AOP代理的工厂实现的接口。
  * <p>Proxies should observe the following contract:
+ * <p>代理应遵守以下约束：
  * <ul>
  * <li>They should implement all interfaces that the configuration
  * indicates should be proxied.
@@ -37,7 +38,7 @@ package org.springframework.aop.framework;
  * If they do not permit advice changes (for example, because
  * the configuration was frozen) a proxy should throw an
  * {@link AopConfigException} on an attempted advice change.
- *
+ * <p>代理可能允许也可能不允许更改 advice。 如果他们不允许更改 advice（例如，由于配置被冻结），则代理应在尝试更改 advice 时引发 {@link AopConfigException}
  * @author Rod Johnson
  * @author Juergen Hoeller
  */

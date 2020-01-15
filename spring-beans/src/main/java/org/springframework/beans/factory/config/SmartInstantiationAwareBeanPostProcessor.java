@@ -41,7 +41,7 @@ public interface SmartInstantiationAwareBeanPostProcessor extends InstantiationA
 
 	/**
 	 * <p> 用来返回目标对象的类型 (比如代理对象通过 raw class 获取 proxy type 用于类型匹配)
-	 * Predict the type of the bean to be eventually returned from this
+	 * <p> Predict the type of the bean to be eventually returned from this
 	 * processor's {@link #postProcessBeforeInstantiation} callback.
 	 * <p>The default implementation returns {@code null}.
 	 * @param beanClass the raw class of the bean
@@ -72,7 +72,7 @@ public interface SmartInstantiationAwareBeanPostProcessor extends InstantiationA
 
 	/**
 	 * <p> 获取要提前暴露的 bean 的引用,用来支持单例对象的循环引用 (一般是 bean 自身,如果是代理对象则需要取用代理引用)
-	 * Obtain a reference for early access to the specified bean,
+	 * <p> Obtain a reference for early access to the specified bean,
 	 * typically for the purpose of resolving a circular reference.
 	 * <p>This callback gives post-processors a chance to expose a wrapper
 	 * early - that is, before the target bean instance is fully initialized.
@@ -85,7 +85,13 @@ public interface SmartInstantiationAwareBeanPostProcessor extends InstantiationA
 	 * return the raw bean instance from those subsequent callbacks (if the wrapper
 	 * for the affected bean has been built for a call to this method already,
 	 * it will be exposes as final bean reference by default).
+	 * <p>这个回调使后处理器有机会提前暴露包装器，也就是说，在目标bean实例完全初始化之前。公开的对象应等效于
+	 * postProcessBeforeInitialization / postProcessAfterInitialization公开的对象。
+	 * 注意，除非后处理器返回与所述后处理回调不同的包装，否则此方法返回的对象将用作Bean引用。
+	 * 换句话说：这些后期处理回调可能最终会公开相同的引用，或者从这些后续回调中返回原始bean实例
+	 * （如果已为该方法的调用构建了受影响的bean的包装，它将被公开。 作为默认的最终bean参考）。
 	 * <p>The default implementation returns the given {@code bean} as-is.
+	 * <p> 默认实现是返回 bean 本身
 	 * @param bean the raw bean instance
 	 * @param beanName the name of the bean
 	 * @return the object to expose as bean reference

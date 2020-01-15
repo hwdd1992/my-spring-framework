@@ -42,6 +42,7 @@ import org.springframework.util.ClassUtils;
  * <p>Creates a dynamic proxy, implementing the interfaces exposed by
  * the AopProxy. Dynamic proxies <i>cannot</i> be used to proxy methods
  * defined in classes, rather than interfaces.
+ * <p> 创建一个动态代理，实现 AopProxy 公开的接口。 动态代理不能用于代理类（而不是接口）中定义的方法。
  *
  * <p>Objects of this type should be obtained through proxy factories,
  * configured by an {@link AdvisedSupport} class. This class is internal

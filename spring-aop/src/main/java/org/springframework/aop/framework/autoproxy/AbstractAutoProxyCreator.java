@@ -120,7 +120,10 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 */
 	private boolean freezeProxy = false;
 
-	/** Default is no common interceptors. */
+	/**
+	 * <p>默认为没有通用拦截器。
+	 * <p> Default is no common interceptors.
+	 */
 	private String[] interceptorNames = new String[0];
 
 	private boolean applyCommonInterceptorsFirst = true;
@@ -184,19 +187,22 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	}
 
 	/**
-	 * Set the common interceptors. These must be bean names in the current factory.
+	 * <p>Set the common interceptors. These must be bean names in the current factory.
 	 * They can be of any advice or advisor type Spring supports.
+	 * <p>设置公共拦截器。 这些必须是当前工厂中的bean名称。 它们可以是Spring支持的任何 advice 或 advisor 类型。
 	 * <p>If this property isn't set, there will be zero common interceptors.
 	 * This is perfectly valid, if "specific" interceptors such as matching
 	 * Advisors are all we want.
+	 * <p>如果未设置此属性，则将有零个公共拦截器。 如果我们只需要“特定的”拦截器（例如匹配的Advisor），则这是完全有效的。
 	 */
 	public void setInterceptorNames(String... interceptorNames) {
 		this.interceptorNames = interceptorNames;
 	}
 
 	/**
-	 * Set whether the common interceptors should be applied before bean-specific ones.
+	 * <p>Set whether the common interceptors should be applied before bean-specific ones.
 	 * Default is "true"; else, bean-specific interceptors will get applied first.
+	 * <p>设置是否先应用公共拦截器。 默认值为“ true”； 否则，将首先应用特定于bean的拦截器
 	 */
 	public void setApplyCommonInterceptorsFirst(boolean applyCommonInterceptorsFirst) {
 		this.applyCommonInterceptorsFirst = applyCommonInterceptorsFirst;
@@ -365,7 +371,9 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	}
 
 	/**
-	 * Return whether the given bean class represents an infrastructure class
+	 * <p>返回给定的bean类是否表示不应代理的基础结构类。
+	 * 默认实现将Advices，Advisor和AopInfrastructureBeans视为基础结构类。
+	 * <p>Return whether the given bean class represents an infrastructure class
 	 * that should never be proxied.
 	 * <p>The default implementation considers Advices, Advisors and
 	 * AopInfrastructureBeans as infrastructure classes.
