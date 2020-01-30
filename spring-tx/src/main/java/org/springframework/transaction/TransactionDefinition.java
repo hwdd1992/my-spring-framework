@@ -71,7 +71,7 @@ public interface TransactionDefinition {
 	 * Support a current transaction; execute non-transactionally if none exists.
 	 * Analogous to the EJB transaction attribute of the same name.
 	 * <p>支持当前事务； 如果不存在，则以非事务方式执行。 类似于同名的EJB事务属性。
-	 *
+	 * <p><br/>
 	 * <p><b>NOTE:</b> For transaction managers with transaction synchronization,
 	 * {@code PROPAGATION_SUPPORTS} is slightly different from no transaction
 	 * at all, as it defines a transaction scope that synchronization might apply to.
@@ -81,6 +81,7 @@ public interface TransactionDefinition {
 	 * configuration of the transaction manager!
 	 * <p><b>注意：</b>对于具有事务同步的事务管理器，{@code PROPAGATION_SUPPORTS} 与根本没有事务略有不同，因为它定义了同步可能适用的事务范围。
 	 * 因此，将为整个指定范围共享相同的资源（JDBC连接，Hibernate会话等）。 请注意，确切的行为取决于事务管理器的实际同步配置！
+	 * <p><br/>
 	 *
 	 * <p>In general, use {@code PROPAGATION_SUPPORTS} with care! In particular, do
 	 * not rely on {@code PROPAGATION_REQUIRED} or {@code PROPAGATION_REQUIRES_NEW}
