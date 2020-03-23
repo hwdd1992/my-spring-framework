@@ -16,8 +16,6 @@
 
 package org.springframework.context.annotation;
 
-import java.util.function.Supplier;
-
 import org.springframework.beans.factory.config.BeanDefinitionCustomizer;
 import org.springframework.beans.factory.support.BeanNameGenerator;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -25,6 +23,8 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+
+import java.util.function.Supplier;
 
 /**
  * Standalone application context, accepting <em>component classes</em> as input &mdash;
@@ -53,14 +53,22 @@ import org.springframework.util.Assert;
  */
 public class AnnotationConfigApplicationContext extends GenericApplicationContext implements AnnotationConfigRegistry {
 
+	/**
+	 * 保存一个读取注解的 Bean 定义读取器,并将其设置到容器中
+	 */
 	private final AnnotatedBeanDefinitionReader reader;
 
+	/**
+	 * 保存一个扫描指定类路径中注解 Bean 定义的扫描器,并将其设置到容器中
+	 */
 	private final ClassPathBeanDefinitionScanner scanner;
 
 
 	/**
 	 * Create a new AnnotationConfigApplicationContext that needs to be populated
 	 * through {@link #register} calls and then manually {@linkplain #refresh refreshed}.
+	 * <p> 默认构造函数,初始化一个空容器,容器不包含任何 Bean 信息,需要稍后通过调用其 register() 方法注册配置类,并调用
+	 * refresh() 方法刷新容器,触发容器对注解 Bean 的载入,解析和注册
 	 */
 	public AnnotationConfigApplicationContext() {
 		this.reader = new AnnotatedBeanDefinitionReader(this);
@@ -78,7 +86,8 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	}
 
 	/**
-	 * Create a new AnnotationConfigApplicationContext, deriving bean definitions
+	 * 最常用的构造函数,通过将涉及的配置类传递给该构造函数,实现将相应配置类中的 Bean 自动注册到容器中.
+	 * <p> Create a new AnnotationConfigApplicationContext, deriving bean definitions
 	 * from the given component classes and automatically refreshing the context.
 	 * @param componentClasses one or more component classes &mdash; for example,
 	 * {@link Configuration @Configuration} classes
@@ -90,7 +99,8 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	}
 
 	/**
-	 * Create a new AnnotationConfigApplicationContext, scanning for components
+	 *  该构造函数会自动扫描已给定的包及其子包下的所有类,并自动识别所有的 Spring Bean,将其注册到容器中
+	 * <p> Create a new AnnotationConfigApplicationContext, scanning for components
 	 * in the given packages, registering bean definitions for those components,
 	 * and automatically refreshing the context.
 	 * @param basePackages the packages to scan for component classes
@@ -114,7 +124,8 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	}
 
 	/**
-	 * Provide a custom {@link BeanNameGenerator} for use with {@link AnnotatedBeanDefinitionReader}
+	 * 为容器的注解 Bean 读取器和注解 Bean 扫描器设置 Bean 名称产生器.
+	 * <p>Provide a custom {@link BeanNameGenerator} for use with {@link AnnotatedBeanDefinitionReader}
 	 * and/or {@link ClassPathBeanDefinitionScanner}, if any.
 	 * <p>Default is {@link org.springframework.context.annotation.AnnotationBeanNameGenerator}.
 	 * <p>Any call to this method must occur prior to calls to {@link #register(Class...)}
@@ -130,7 +141,8 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	}
 
 	/**
-	 * Set the {@link ScopeMetadataResolver} to use for registered component classes.
+	 * 为容器的注解 Bean 读取器和注解 Bean 扫描器设置作用范围元信息解析器.
+	 * <p>Set the {@link ScopeMetadataResolver} to use for registered component classes.
 	 * <p>The default is an {@link AnnotationScopeMetadataResolver}.
 	 * <p>Any call to this method must occur prior to calls to {@link #register(Class...)}
 	 * and/or {@link #scan(String...)}.
@@ -146,7 +158,9 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	//---------------------------------------------------------------------
 
 	/**
-	 * Register one or more component classes to be processed.
+	 * 为容器注册一个要被处理的注解 Bean,新注册的 Bean,必须手动调用容器的 refresh() 方法刷新容器,触发容器对新注册的
+	 * Bean 的处理
+	 * <p>Register one or more component classes to be processed.
 	 * <p>Note that {@link #refresh()} must be called in order for the context
 	 * to fully process the new classes.
 	 * @param componentClasses one or more component classes &mdash; for example,
@@ -161,7 +175,8 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	}
 
 	/**
-	 * Perform a scan within the specified base packages.
+	 * 扫描指定包路径下的注解类,为了使新添加的类被处理,必须手动调用 refresh() 方法刷新容器
+	 * <p>Perform a scan within the specified base packages.
 	 * <p>Note that {@link #refresh()} must be called in order for the context
 	 * to fully process the new classes.
 	 * @param basePackages the packages to scan for component classes

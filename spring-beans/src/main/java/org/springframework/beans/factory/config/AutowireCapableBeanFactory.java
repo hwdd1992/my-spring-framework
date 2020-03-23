@@ -16,14 +16,14 @@
 
 package org.springframework.beans.factory.config;
 
-import java.util.Set;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.TypeConverter;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.lang.Nullable;
+
+import java.util.Set;
 
 /**
  * Extension of the {@link org.springframework.beans.factory.BeanFactory}
@@ -53,7 +53,7 @@ import org.springframework.lang.Nullable;
  * ApplicationContext, to get access to an AutowireCapableBeanFactory:
  * simply cast the passed-in BeanFactory to AutowireCapableBeanFactory.
  *
- * 提供创建 bean 、 自动注入 、 初始化以及应用 bean 的后处理器
+ * 提供创建 bean 、 自动注入 、 初始化以及应用 bean 的后处理器. 定义 bean 的自动装配规则
  *
  * @author Juergen Hoeller
  * @since 04.12.2003

@@ -42,3 +42,7 @@ out
 test-output
 atlassian-ide-plugin.xml
 .gradletasknamecache
+
+/spring.srctrlbm
+/spring.srctrldb
+/spring.srctrlprj

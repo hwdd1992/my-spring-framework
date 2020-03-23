@@ -30,6 +30,13 @@ import org.springframework.lang.Nullable;
  * {@link BeanFactoryPostProcessor} such as {@link PropertyPlaceholderConfigurer}
  * to introspect and modify property values and other bean metadata.
  *
+ * <p> BeanDefinition 接口是 xml 配置文件中 {@code <bean>} 元素标签在容器中的内部形式.BeanDefinition 接口中
+ * 提供了相应的诸如 beanClass,scope,lazyInit ,destroyMethod等属性,它们对于一般性的 {@code <bean>} 元素标签.
+ * 最长使用的实现类是 {@code RootBeanDefinition} ,它对应一般性的{@code <bean>} 元素标签. {@code GenericBeanDefinition} 是自
+ * 2.5 版本以后新加入的 bean 文件配置属性定义类,是一站式服务类.
+ *
+ * <p> ChildBeanDefinition 用于父子 bean 的配置. 父 bean 用 RootBeanDefinition 表示
+ *
  * @author Juergen Hoeller
  * @author Rob Harrop
  * @since 19.03.2004

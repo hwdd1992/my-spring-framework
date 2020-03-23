@@ -16,12 +16,12 @@
 
 package org.springframework.beans.factory;
 
-import java.lang.annotation.Annotation;
-import java.util.Map;
-
 import org.springframework.beans.BeansException;
 import org.springframework.core.ResolvableType;
 import org.springframework.lang.Nullable;
+
+import java.lang.annotation.Annotation;
+import java.util.Map;
 
 /**
  * Extension of the {@link BeanFactory} interface to be implemented by bean factories
@@ -49,7 +49,7 @@ import org.springframework.lang.Nullable;
  * and {@code containsBeanDefinition}, the methods in this interface
  * are not designed for frequent invocation. Implementations may be slow.
  *
- * 根据各种条件获取 bean 的配置清单
+ * 根据各种条件获取 bean 的配置清单. ListableBeanFactory 管理的 bean 表示这些bean可以被列表化
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @since 16 April 2001
