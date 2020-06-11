@@ -33,8 +33,11 @@ import org.springframework.web.context.request.NativeWebRequest;
 public interface HandlerMethodArgumentResolver {
 
 	/**
+	 * 判断当前处理器是否支持给定的参数 {@linkplain MethodParameter method parameter}
+	 * <p>
 	 * Whether the given {@linkplain MethodParameter method parameter} is
 	 * supported by this resolver.
+	 *
 	 * @param parameter the method parameter to check
 	 * @return {@code true} if this resolver supports the supplied parameter;
 	 * {@code false} otherwise
@@ -42,22 +45,27 @@ public interface HandlerMethodArgumentResolver {
 	boolean supportsParameter(MethodParameter parameter);
 
 	/**
+	 * 将 {@linkplain MethodParameter method parameter} 参数解析到 {@linkplain NativeWebRequest 当前请求}
+	 * 对应的参数名中.{@link ModelAndViewContainer} 可以提供当前请求绑定的 model 对象. 当需要参数绑定
+	 * 或者类型转换时,{@link WebDataBinderFactory} 可以提供创建 {@link WebDataBinder} 实例的方法
+	 * <p>
 	 * Resolves a method parameter into an argument value from a given request.
 	 * A {@link ModelAndViewContainer} provides access to the model for the
 	 * request. A {@link WebDataBinderFactory} provides a way to create
 	 * a {@link WebDataBinder} instance when needed for data binding and
 	 * type conversion purposes.
-	 * @param parameter the method parameter to resolve. This parameter must
-	 * have previously been passed to {@link #supportsParameter} which must
-	 * have returned {@code true}.
-	 * @param mavContainer the ModelAndViewContainer for the current request
-	 * @param webRequest the current request
+	 *
+	 * @param parameter     the method parameter to resolve. This parameter must
+	 *                      have previously been passed to {@link #supportsParameter} which must
+	 *                      have returned {@code true}.
+	 * @param mavContainer  the ModelAndViewContainer for the current request
+	 * @param webRequest    the current request
 	 * @param binderFactory a factory for creating {@link WebDataBinder} instances
 	 * @return the resolved argument value, or {@code null} if not resolvable
 	 * @throws Exception in case of errors with the preparation of argument values
 	 */
 	@Nullable
 	Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
-			NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception;
+						   NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception;
 
 }
