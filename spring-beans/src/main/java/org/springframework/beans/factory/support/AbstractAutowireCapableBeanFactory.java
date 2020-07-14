@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -313,7 +313,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
     public void autowireBean(Object existingBean) {
         // Use non-singleton bean definition, to avoid registering bean as dependent bean.
         RootBeanDefinition bd = new RootBeanDefinition(ClassUtils.getUserClass(existingBean));
-        bd.setScope(BeanDefinition.SCOPE_PROTOTYPE);
+        bd.setScope(SCOPE_PROTOTYPE);
         bd.allowCaching = ClassUtils.isCacheSafe(bd.getBeanClass(), getBeanClassLoader());
         BeanWrapper bw = new BeanWrapperImpl(existingBean);
         initBeanWrapper(bw);
@@ -333,7 +333,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             bd = new RootBeanDefinition(mbd);
         }
         if (!bd.isPrototype()) {
-            bd.setScope(BeanDefinition.SCOPE_PROTOTYPE);
+            bd.setScope(SCOPE_PROTOTYPE);
             bd.allowCaching = ClassUtils.isCacheSafe(ClassUtils.getUserClass(existingBean), getBeanClassLoader());
         }
         BeanWrapper bw = new BeanWrapperImpl(existingBean);
@@ -351,28 +351,28 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
     public Object createBean(Class<?> beanClass, int autowireMode, boolean dependencyCheck) throws BeansException {
         // Use non-singleton bean definition, to avoid registering bean as dependent bean.
         RootBeanDefinition bd = new RootBeanDefinition(beanClass, autowireMode, dependencyCheck);
-        bd.setScope(BeanDefinition.SCOPE_PROTOTYPE);
+        bd.setScope(SCOPE_PROTOTYPE);
         return createBean(beanClass.getName(), bd, null);
     }
 
     @Override
     public Object autowire(Class<?> beanClass, int autowireMode, boolean dependencyCheck) throws BeansException {
         // Use non-singleton bean definition, to avoid registering bean as dependent bean.
-        final RootBeanDefinition bd = new RootBeanDefinition(beanClass, autowireMode, dependencyCheck);
-        bd.setScope(BeanDefinition.SCOPE_PROTOTYPE);
+         RootBeanDefinition bd = new RootBeanDefinition(beanClass, autowireMode, dependencyCheck);
+        bd.setScope(SCOPE_PROTOTYPE);
         if (bd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR) {
             return autowireConstructor(beanClass.getName(), bd, null, null).getWrappedInstance();
         }
         else {
             Object bean;
-            final BeanFactory parent = this;
+
             if (System.getSecurityManager() != null) {
                 bean = AccessController.doPrivileged((PrivilegedAction<Object>) () ->
-                                getInstantiationStrategy().instantiate(bd, null, parent),
+                                getInstantiationStrategy().instantiate(bd, null, this),
                         getAccessControlContext());
             }
             else {
-                bean = getInstantiationStrategy().instantiate(bd, null, parent);
+                bean = getInstantiationStrategy().instantiate(bd, null, this);
             }
             populateBean(beanClass.getName(), bd, new BeanWrapperImpl(bean));
             return bean;
@@ -389,7 +389,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         // Use non-singleton bean definition, to avoid registering bean as dependent bean.
         RootBeanDefinition bd =
                 new RootBeanDefinition(ClassUtils.getUserClass(existingBean), autowireMode, dependencyCheck);
-        bd.setScope(BeanDefinition.SCOPE_PROTOTYPE);
+        bd.setScope(SCOPE_PROTOTYPE);
         BeanWrapper bw = new BeanWrapperImpl(existingBean);
         initBeanWrapper(bw);
         populateBean(bd.getBeanClass().getName(), bd, bw);
@@ -551,7 +551,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
      * @see #instantiateUsingFactoryMethod
      * @see #autowireConstructor
      */
-    protected Object doCreateBean(final String beanName, final RootBeanDefinition mbd, final @Nullable Object[] args)
+    protected Object doCreateBean(String beanName, RootBeanDefinition mbd, @Nullable Object[] args)
             throws BeanCreationException {
 
         // Instantiate the bean.
@@ -564,7 +564,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             //根据指定 bean 使用对应的策略创建新的实例,如: 工厂方法,构造函数自动注入,简单初始化
             instanceWrapper = createBeanInstance(beanName, mbd, args);
         }
-        final Object bean = instanceWrapper.getWrappedInstance();
+         Object bean = instanceWrapper.getWrappedInstance();
         Class<?> beanType = instanceWrapper.getWrappedClass();
         if (beanType != NullBean.class) {
             mbd.resolvedTargetType = beanType;
@@ -656,7 +656,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
                                         "] in its raw version as part of a circular reference, but has eventually been " +
                                         "wrapped. This means that said other beans do not use the final version of the " +
                                         "bean. This is often the result of over-eager type matching - consider using " +
-                                        "'getBeanNamesOfType' with the 'allowEagerInit' flag turned off, for example.");
+                                        "'getBeanNamesForType' with the 'allowEagerInit' flag turned off, for example.");
                     }
                 }
             }
@@ -933,7 +933,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
      * @return the common {@code FactoryBean} object type, or {@code null} if none
      */
     @Nullable
-    private Class<?> getTypeForFactoryBeanFromMethod(Class<?> beanClass, final String factoryMethodName) {
+    private Class<?> getTypeForFactoryBeanFromMethod(Class<?> beanClass, String factoryMethodName) {
 
         /**
          * Holder used to keep a reference to a {@code Class} value.
@@ -1346,17 +1346,17 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
      * @param mbd the bean definition for the bean
      * @return a BeanWrapper for the new instance
      */
-    protected BeanWrapper instantiateBean(final String beanName, final RootBeanDefinition mbd) {
+    protected BeanWrapper instantiateBean(String beanName,  RootBeanDefinition mbd) {
         try {
             Object beanInstance;
-            final BeanFactory parent = this;
+
             if (System.getSecurityManager() != null) {
                 beanInstance = AccessController.doPrivileged((PrivilegedAction<Object>) () ->
-                                getInstantiationStrategy().instantiate(mbd, beanName, parent),
+                                getInstantiationStrategy().instantiate(mbd, beanName, this),
                         getAccessControlContext());
             }
             else {
-                beanInstance = getInstantiationStrategy().instantiate(mbd, beanName, parent);
+                beanInstance = getInstantiationStrategy().instantiate(mbd, beanName, this);
             }
             BeanWrapper bw = new BeanWrapperImpl(beanInstance);
             initBeanWrapper(bw);
@@ -1825,7 +1825,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
      * @see #invokeInitMethods
      * @see #applyBeanPostProcessorsAfterInitialization
      */
-    protected Object initializeBean(final String beanName, final Object bean, @Nullable RootBeanDefinition mbd) {
+    protected Object initializeBean(String beanName, Object bean, @Nullable RootBeanDefinition mbd) {
         if (System.getSecurityManager() != null) {
             AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
                 invokeAwareMethods(beanName, bean);
@@ -1856,7 +1856,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         return wrappedBean;
     }
 
-    private void invokeAwareMethods(final String beanName, final Object bean) {
+    private void invokeAwareMethods(String beanName, Object bean) {
         if (bean instanceof Aware) {
             if (bean instanceof BeanNameAware) {
                 ((BeanNameAware) bean).setBeanName(beanName);
@@ -1885,7 +1885,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
      * @throws Throwable if thrown by init methods or by the invocation process
      * @see #invokeCustomInitMethod
      */
-    protected void invokeInitMethods(String beanName, final Object bean, @Nullable RootBeanDefinition mbd)
+    protected void invokeInitMethods(String beanName, Object bean, @Nullable RootBeanDefinition mbd)
             throws Throwable {
 
         boolean isInitializingBean = (bean instanceof InitializingBean);
@@ -1926,7 +1926,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
      * methods with arguments.
      * @see #invokeInitMethods
      */
-    protected void invokeCustomInitMethod(String beanName, final Object bean, RootBeanDefinition mbd)
+    protected void invokeCustomInitMethod(String beanName, Object bean, RootBeanDefinition mbd)
             throws Throwable {
 
         String initMethodName = mbd.getInitMethodName();
@@ -1961,8 +1961,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
                 return null;
             });
             try {
-                AccessController.doPrivileged((PrivilegedExceptionAction<Object>) () ->
-                        methodToInvoke.invoke(bean), getAccessControlContext());
+                AccessController.doPrivileged((PrivilegedExceptionAction<Object>)
+                        () ->methodToInvoke.invoke(bean), getAccessControlContext());
             }
             catch (PrivilegedActionException pae) {
                 InvocationTargetException ex = (InvocationTargetException) pae.getException();
