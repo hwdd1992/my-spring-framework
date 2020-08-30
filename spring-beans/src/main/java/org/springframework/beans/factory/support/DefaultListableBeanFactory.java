@@ -94,8 +94,7 @@ import org.springframework.util.StringUtils;
  * operating on pre-resolved bean definition metadata objects.
  *
  * <p>Note that readers for specific bean definition formats are typically
- * implemented separately rather than as bean factory subclasses:
- * see for example {@link PropertiesBeanDefinitionReader} and
+ * implemented separately rather than as bean factory subclasses: see for example
  * {@link org.springframework.beans.factory.xml.XmlBeanDefinitionReader}.
  *
  * <p>For an alternative implementation of the
@@ -184,7 +183,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	private volatile String[] frozenBeanDefinitionNames;
 
 	/** Whether bean definition metadata may be cached for all beans. */
-	private volatile boolean configurationFrozen = false;
+	private volatile boolean configurationFrozen;
 
 
 	/**
@@ -356,12 +355,11 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	}
 
 	@Override
-	public <T> ObjectProvider<T> getBeanProvider(Class<T> requiredType) throws BeansException {
+	public <T> ObjectProvider<T> getBeanProvider(Class<T> requiredType) {
 		Assert.notNull(requiredType, "Required type must not be null");
 		return getBeanProvider(ResolvableType.forRawClass(requiredType));
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public <T> ObjectProvider<T> getBeanProvider(ResolvableType requiredType) {
 		return new BeanObjectProvider<T>() {
@@ -391,15 +389,20 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			public T getIfUnique() throws BeansException {
 				return resolveBean(requiredType, null, true);
 			}
+			@SuppressWarnings("unchecked")
 			@Override
 			public Stream<T> stream() {
 				return Arrays.stream(getBeanNamesForTypedStream(requiredType))
 						.map(name -> (T) getBean(name))
 						.filter(bean -> !(bean instanceof NullBean));
 			}
+			@SuppressWarnings("unchecked")
 			@Override
 			public Stream<T> orderedStream() {
 				String[] beanNames = getBeanNamesForTypedStream(requiredType);
+				if (beanNames.length == 0) {
+					return Stream.empty();
+				}
 				Map<String, T> matchingBeans = new LinkedHashMap<>(beanNames.length);
 				for (String beanName : beanNames) {
 					Object beanInstance = getBean(beanName);
@@ -552,6 +555,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 					}
 					onSuppressedException(ex);
 				}
+				catch (NoSuchBeanDefinitionException ex) {
+					// Bean definition got removed while we were iterating -> ignore.
+				}
 			}
 		}
 
@@ -640,8 +646,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	public String[] getBeanNamesForAnnotation(Class<? extends Annotation> annotationType) {
 		List<String> result = new ArrayList<>();
 		for (String beanName : this.beanDefinitionNames) {
-			BeanDefinition beanDefinition = getBeanDefinition(beanName);
-			if (!beanDefinition.isAbstract() && findAnnotationOnBean(beanName, annotationType) != null) {
+			BeanDefinition bd = this.beanDefinitionMap.get(beanName);
+			if (bd != null && !bd.isAbstract() && findAnnotationOnBean(beanName, annotationType) != null) {
 				result.add(beanName);
 			}
 		}
@@ -1023,8 +1029,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		for (String bdName : this.beanDefinitionNames) {
 			if (!beanName.equals(bdName)) {
 				BeanDefinition bd = this.beanDefinitionMap.get(bdName);
-				// Ensure bd is non-null due to potential concurrent modification
-				// of the beanDefinitionMap.
+				// Ensure bd is non-null due to potential concurrent modification of beanDefinitionMap.
 				if (bd != null && beanName.equals(bd.getParentName())) {
 					resetBeanDefinition(bdName);
 				}
@@ -1353,9 +1358,11 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			TypeConverter converter = (typeConverter != null ? typeConverter : getTypeConverter());
 			Object result = converter.convertIfNecessary(matchingBeans.values(), type);
 			if (result instanceof List) {
-				Comparator<Object> comparator = adaptDependencyComparator(matchingBeans);
-				if (comparator != null) {
-					((List<?>) result).sort(comparator);
+				if (((List<?>) result).size() > 1) {
+					Comparator<Object> comparator = adaptDependencyComparator(matchingBeans);
+					if (comparator != null) {
+						((List<?>) result).sort(comparator);
+					}
 				}
 			}
 			return result;
@@ -1687,17 +1694,22 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	 */
 	private void checkBeanNotOfRequiredType(Class<?> type, DependencyDescriptor descriptor) {
 		for (String beanName : this.beanDefinitionNames) {
-			RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
-			Class<?> targetType = mbd.getTargetType();
-			if (targetType != null && type.isAssignableFrom(targetType) &&
-					isAutowireCandidate(beanName, mbd, descriptor, getAutowireCandidateResolver())) {
-				// Probably a proxy interfering with target type match -> throw meaningful exception.
-				Object beanInstance = getSingleton(beanName, false);
-				Class<?> beanType = (beanInstance != null && beanInstance.getClass() != NullBean.class ?
-						beanInstance.getClass() : predictBeanType(beanName, mbd));
-				if (beanType != null && !type.isAssignableFrom(beanType)) {
-					throw new BeanNotOfRequiredTypeException(beanName, type, beanType);
+			try {
+				RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
+				Class<?> targetType = mbd.getTargetType();
+				if (targetType != null && type.isAssignableFrom(targetType) &&
+						isAutowireCandidate(beanName, mbd, descriptor, getAutowireCandidateResolver())) {
+					// Probably a proxy interfering with target type match -> throw meaningful exception.
+					Object beanInstance = getSingleton(beanName, false);
+					Class<?> beanType = (beanInstance != null && beanInstance.getClass() != NullBean.class ?
+							beanInstance.getClass() : predictBeanType(beanName, mbd));
+					if (beanType != null && !type.isAssignableFrom(beanType)) {
+						throw new BeanNotOfRequiredTypeException(beanName, type, beanType);
+					}
 				}
+			}
+			catch (NoSuchBeanDefinitionException ex) {
+				// Bean definition got removed while we were iterating -> ignore.
 			}
 		}
 
