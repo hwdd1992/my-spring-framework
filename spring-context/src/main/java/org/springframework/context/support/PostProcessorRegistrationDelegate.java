@@ -51,7 +51,12 @@ final class PostProcessorRegistrationDelegate {
 	private PostProcessorRegistrationDelegate() {
 	}
 
-
+	/**
+	 * 对于 BeanFactoryPostProcessor 的处理主要分两种情况进行，一个
+	 * 是对于 BeanDefinitionRegistry 类的特殊处理,另一种是对普通的
+	 * BeanFactoryPostProcessor 进行处理.而对于每种情况都需要考虑
+	 * 硬编码注入注册的后处理器以及通过配置配置注入的后处理器.
+	 */
 	public static void invokeBeanFactoryPostProcessors(
 			ConfigurableListableBeanFactory beanFactory, List<BeanFactoryPostProcessor> beanFactoryPostProcessors) {
 

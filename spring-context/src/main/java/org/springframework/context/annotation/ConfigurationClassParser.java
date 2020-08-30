@@ -179,6 +179,7 @@ class ConfigurationClassParser {
 					parse(((AbstractBeanDefinition) bd).getBeanClass(), holder.getBeanName());
 				}
 				else {
+					//可能是硬编码进来的.
 					parse(bd.getBeanClassName(), holder.getBeanName());
 				}
 			}

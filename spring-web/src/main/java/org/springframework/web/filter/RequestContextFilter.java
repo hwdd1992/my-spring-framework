@@ -28,6 +28,8 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
+ * 用于初始化 RequestContext 请求上下文,把当前请求和响应放入 Spring MVC 的请求上下文中.<br/>
+ *
  * Servlet Filter that exposes the request to the current thread,
  * through both {@link org.springframework.context.i18n.LocaleContextHolder} and
  * {@link RequestContextHolder}. To be registered as filter in {@code web.xml}.

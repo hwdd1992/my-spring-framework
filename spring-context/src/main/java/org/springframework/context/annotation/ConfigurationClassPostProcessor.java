@@ -268,12 +268,16 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
 			if (ConfigurationClassUtils.isFullConfigurationClass(beanDef) ||
 					ConfigurationClassUtils.isLiteConfigurationClass(beanDef)) {
+				//这里的 bean 已经注册到 Spring 容器中了.
 				if (logger.isDebugEnabled()) {
 					logger.debug("Bean definition has already been processed as a configuration class: " + beanDef);
 				}
 			}
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
-				//检查给定的bean定义是否是配置类（或在配置/组件类中声明的嵌套组件类，也要自动注册）的候选者，并进行相应标记。
+				/*
+				从类的元信息中读取信息,检查给定的bean定义是否是配置类（或在配置/组件类中声明的嵌套组件类，也要自动注册）的候选者，并进行相应标记。
+				并且根据配置的信息，设置 configuration 类的顺序到 beanDef 中
+				 */
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}
 		}
@@ -308,7 +312,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			this.environment = new StandardEnvironment();
 		}
 
-		// Parse each @Configuration class
+		// Parse each @Configuration class,解析所有 Configuration 类
 		ConfigurationClassParser parser = new ConfigurationClassParser(
 				this.metadataReaderFactory, this.problemReporter, this.environment,
 				this.resourceLoader, this.componentScanBeanNameGenerator, registry);

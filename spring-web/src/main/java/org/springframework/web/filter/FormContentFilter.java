@@ -47,6 +47,9 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 
 /**
+ * 用于支持请求方法为 PUT , PATCH , DELETE 时，把表单参数解析到请求参数中,已支持从
+ * request 的 getParameter 中获取表单请求参数的功能. <br/>
+ *
  * {@code Filter} that parses form data for HTTP PUT, PATCH, and DELETE requests
  * and exposes it as Servlet request parameters. By default the Servlet spec
  * only requires this for HTTP POST.

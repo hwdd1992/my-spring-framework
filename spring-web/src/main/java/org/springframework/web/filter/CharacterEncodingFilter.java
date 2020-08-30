@@ -27,6 +27,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
+ * 用于强制指定请求和响应的编码. <br/>
+ *
  * Servlet Filter that allows one to specify a character encoding for requests.
  * This is useful because current browsers typically do not set a character
  * encoding even if specified in the HTML page or form.

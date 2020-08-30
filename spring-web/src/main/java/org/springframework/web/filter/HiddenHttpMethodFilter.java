@@ -34,6 +34,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.util.WebUtils;
 
 /**
+ * 用于在请求方法为 POST 时,从请求参数中获取请求方法,并用获取的参数作为真实的请求方法,
+ * 替换当前的的 POST 请求方法.该组件用于为只支持 GET 和 POST 两种方法的浏览器提供支持.<br/>
+ *
  * {@link javax.servlet.Filter} that converts posted method parameters into HTTP methods,
  * retrievable via {@link HttpServletRequest#getMethod()}. Since browsers currently only
  * support GET and POST, a common technique - used by the Prototype library, for instance -
