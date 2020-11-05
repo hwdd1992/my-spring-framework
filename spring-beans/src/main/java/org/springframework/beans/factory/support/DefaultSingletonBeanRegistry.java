@@ -91,7 +91,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
      * 当一个 单例 bean 被放到这里面后,那么当 bean 还在创建的时候,就可以通过 getBean 方法获取了,其目的是用来检测循环依赖的.
      */
     /** Cache of early singleton objects: bean name to bean instance. */
-    private final Map<String, Object> earlySingletonObjects = new HashMap<>(16);
+    private final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>(16);
 
     /*用来保存当前所有已经注册的 bean*/
     /** Set of registered singletons, containing the bean names in registration order. */
@@ -185,41 +185,48 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
         return getSingleton(beanName, true);
     }
 
-    /**
-     * Return the (raw) singleton object registered under the given name.
-     * <p>Checks already instantiated singletons and also allows for an early
-     * reference to a currently created singleton (resolving a circular reference).
-     * @param beanName the name of the bean to look for
-     * @param allowEarlyReference whether early references should be created or not
-     * @return the registered singleton object, or {@code null} if none found
-     */
-    @Nullable
-    protected Object getSingleton(String beanName, boolean allowEarlyReference) {
-        //检查缓存中是否存在实例
-        Object singletonObject = this.singletonObjects.get(beanName);
-        if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
-            //如果为空,则锁定全局变量进行处理.
-            synchronized (this.singletonObjects) {
-                //如果此 bean 正在加载则不处理.
-                singletonObject = this.earlySingletonObjects.get(beanName);
-                if (singletonObject == null && allowEarlyReference) {
-                    /*
+	/**
+	 * Return the (raw) singleton object registered under the given name.
+	 * <p>Checks already instantiated singletons and also allows for an early
+	 * reference to a currently created singleton (resolving a circular reference).
+	 * @param beanName the name of the bean to look for
+	 * @param allowEarlyReference whether early references should be created or not
+	 * @return the registered singleton object, or {@code null} if none found
+	 */
+	@Nullable
+	protected Object getSingleton(String beanName, boolean allowEarlyReference) {
+		//检查缓存中是否存在实例
+		// Quick check for existing instance without full singleton lock
+		Object singletonObject = this.singletonObjects.get(beanName);
+		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
+			//如果为空,则锁定全局变量进行处理.
+			singletonObject = this.earlySingletonObjects.get(beanName);
+			if (singletonObject == null && allowEarlyReference) {
+				synchronized (this.singletonObjects) {
+					// Consistent creation of early reference within full singleton lock
+					singletonObject = this.singletonObjects.get(beanName);
+					if (singletonObject == null) {
+						singletonObject = this.earlySingletonObjects.get(beanName);
+						if (singletonObject == null) {
+							/*
                     当某些方法需要提前初始化的时候则会调用 addSingletonFactory() 方法将对应的
                     ObjectFactory初始化策略存储在 singletonFactories
                      */
-                    ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
-                    if (singletonFactory != null) {
-                        //调用预先设定的 getObject() 方法.
-                        singletonObject = singletonFactory.getObject();
-                        //记录在缓存中, earlySingletonObjects 和 singletonFactories 互斥.
-                        this.earlySingletonObjects.put(beanName, singletonObject);
-                        this.singletonFactories.remove(beanName);
-                    }
-                }
-            }
-        }
-        return singletonObject;
-    }
+							ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
+							if (singletonFactory != null) {
+								//调用预先设定的 getObject() 方法.
+								singletonObject = singletonFactory.getObject();
+								//记录在缓存中, earlySingletonObjects 和 singletonFactories 互斥.
+								this.earlySingletonObjects.put(beanName, singletonObject);
+								this.singletonFactories.remove(beanName);
+							}
+						}
+					}
+				}
+			}
+		}
+		return singletonObject;
+	}
 
     /**
      * Return the (raw) singleton object registered under the given name,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@ import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import com.fasterxml.jackson.databind.ser.FilterProvider;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.http.HttpInputMessage;
@@ -234,18 +233,18 @@ public abstract class AbstractJackson2HttpMessageConverter extends AbstractGener
 	}
 
 	@Override
-	protected Object readInternal(Class<?> clazz, HttpInputMessage inputMessage)
-			throws IOException, HttpMessageNotReadableException {
-
-		JavaType javaType = getJavaType(clazz, null);
-		return readJavaType(javaType, inputMessage);
-	}
-
-	@Override
 	public Object read(Type type, @Nullable Class<?> contextClass, HttpInputMessage inputMessage)
 			throws IOException, HttpMessageNotReadableException {
 
 		JavaType javaType = getJavaType(type, contextClass);
+		return readJavaType(javaType, inputMessage);
+	}
+
+	@Override
+	protected Object readInternal(Class<?> clazz, HttpInputMessage inputMessage)
+			throws IOException, HttpMessageNotReadableException {
+
+		JavaType javaType = getJavaType(clazz, null);
 		return readJavaType(javaType, inputMessage);
 	}
 
@@ -284,7 +283,15 @@ public abstract class AbstractJackson2HttpMessageConverter extends AbstractGener
 		}
 	}
 
-	private static Charset getCharset(@Nullable MediaType contentType) {
+	/**
+	 * Determine the charset to use for JSON input.
+	 * <p>By default this is either the charset from the input {@code MediaType}
+	 * or otherwise falling back on {@code UTF-8}. Can be overridden in subclasses.
+	 * @param contentType the content type of the HTTP input message
+	 * @return the charset to use
+	 * @since 5.1.18
+	 */
+	protected Charset getCharset(@Nullable MediaType contentType) {
 		if (contentType != null && contentType.getCharset() != null) {
 			return contentType.getCharset();
 		}
@@ -368,8 +375,7 @@ public abstract class AbstractJackson2HttpMessageConverter extends AbstractGener
 	 * @return the Jackson JavaType
 	 */
 	protected JavaType getJavaType(Type type, @Nullable Class<?> contextClass) {
-		TypeFactory typeFactory = this.objectMapper.getTypeFactory();
-		return typeFactory.constructType(GenericTypeResolver.resolveType(type, contextClass));
+		return this.objectMapper.constructType(GenericTypeResolver.resolveType(type, contextClass));
 	}
 
 	/**

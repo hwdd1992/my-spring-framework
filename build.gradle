@@ -40,14 +40,14 @@ ext {
 	kotlinVersion        = "1.2.71"
 	log4jVersion         = "2.11.2"
 	nettyVersion         = "4.1.51.Final"
-	reactorVersion       = "Californium-SR20"
+	reactorVersion       = "Californium-SR22"
 	rxjavaVersion        = "1.3.8"
 	rxjavaAdapterVersion = "1.2.1"
 	rxjava2Version       = "2.2.19"
 	slf4jVersion         = "1.7.30"	  // spring-jcl + consistent 3rd party deps
 	tiles3Version        = "3.0.8"
 	tomcatVersion        = "9.0.37"
-	undertowVersion      = "2.0.30.Final"
+	undertowVersion      = "2.0.32.Final"
 
 	gradleScriptDir = "${rootProject.projectDir}/gradle"
 	withoutJclOverSlf4j = {
@@ -144,7 +144,7 @@ configure(allprojects) { project ->
 	}
 
 	checkstyle {
-		toolVersion = "8.35"
+		toolVersion = "8.36.2"
 		configDir = rootProject.file("src/checkstyle")
 	}
 
