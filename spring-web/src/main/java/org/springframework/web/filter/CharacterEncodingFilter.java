@@ -190,7 +190,7 @@ public class CharacterEncodingFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(
 			HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
-
+		//获取当前配置的编码
 		String encoding = getEncoding();
 		if (encoding != null) {
 			if (isForceRequestEncoding() || request.getCharacterEncoding() == null) {

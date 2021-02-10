@@ -909,7 +909,10 @@ public class DispatcherServlet extends FrameworkServlet {
 	@Override
 	protected void doService(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		logRequest(request);
-
+		/*
+		保存请求属性快照用于请求完成后恢复.
+		用于在请求类型为 include 时,保存当前请求属性的快照,以便在 include 执行完后恢复请求属性
+		 */
 		// Keep a snapshot of the request attributes in case of an include,
 		// to be able to restore the original attributes after the include.
 		Map<String, Object> attributesSnapshot = null;
@@ -919,23 +922,36 @@ public class DispatcherServlet extends FrameworkServlet {
 			while (attrNames.hasMoreElements()) {
 				String attrName = (String) attrNames.nextElement();
 				if (this.cleanupAfterInclude || attrName.startsWith(DEFAULT_STRATEGIES_PREFIX)) {
+					/*
+					cleanAfterInclude 为 true,表示在 include 执行完成后,清理当前请求的所有请求属性.
+					或者只保存属性名前缀为 org.springframework.web.servlet
+					 */
 					attributesSnapshot.put(attrName, request.getAttribute(attrName));
 				}
 			}
 		}
 
+		//把当前 Spring MVC 应用上下文放入请求属性
 		// Make framework objects available to handlers and view objects.
 		request.setAttribute(WEB_APPLICATION_CONTEXT_ATTRIBUTE, getWebApplicationContext());
+		//把本地化解析器放入请求属性
 		request.setAttribute(LOCALE_RESOLVER_ATTRIBUTE, this.localeResolver);
+		//把主题解析器放入请求属性
 		request.setAttribute(THEME_RESOLVER_ATTRIBUTE, this.themeResolver);
+		//把主题源放入请求属性,主题源使用 ThemSource 组件
 		request.setAttribute(THEME_SOURCE_ATTRIBUTE, getThemeSource());
 
+		//FlashMap 管理器,用于支持跨请求的参数传递,即用于支持 RedirectAttributes
 		if (this.flashMapManager != null) {
+			//通过 FlashMap 管理器获取当前请求的输入 FlashMap,本次请求的输入 FlashMap 为上次请求的输出 FlashMap
 			FlashMap inputFlashMap = this.flashMapManager.retrieveAndUpdate(request, response);
 			if (inputFlashMap != null) {
+				//如果输入 FlashMap 不是空,则放入请求属性中,以提供给后续的 Model 使用
 				request.setAttribute(INPUT_FLASH_MAP_ATTRIBUTE, Collections.unmodifiableMap(inputFlashMap));
 			}
+			//同时初始化一个本地请求的输出 FlashMap,用于提供给 RedirectAttributes 使用
 			request.setAttribute(OUTPUT_FLASH_MAP_ATTRIBUTE, new FlashMap());
+			//把 FlashMap 管理器放入请求属性中.
 			request.setAttribute(FLASH_MAP_MANAGER_ATTRIBUTE, this.flashMapManager);
 		}
 

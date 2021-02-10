@@ -80,6 +80,8 @@ public abstract class OncePerRequestFilter extends GenericFilterBean {
 	 * This {@code doFilter} implementation stores a request attribute for
 	 * "already filtered", proceeding without filtering again if the
 	 * attribute is already there.
+	 *
+	 * 用来确保子类 Filter 在一次请求的处理过程中只会被处理一次.
 	 * @see #getAlreadyFilteredAttributeName
 	 * @see #shouldNotFilter
 	 * @see #doFilterInternal

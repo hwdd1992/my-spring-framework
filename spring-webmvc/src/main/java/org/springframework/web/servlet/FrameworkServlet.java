@@ -987,22 +987,45 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 */
 	protected final void processRequest(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-
+		//记录当前时间,用于日志记录
 		long startTime = System.currentTimeMillis();
+		//失败原因,请求过程中如果抛出异常,用该变量记录
 		Throwable failureCause = null;
 
+		/*
+		获取当前本地化的上下文,存储为上一个本地化上下文变量,以便在此请求处理中使用新的本地化上下文，在使用完成后
+		通过该变量恢复原始的本地化上下文.
+		 */
 		LocaleContext previousLocaleContext = LocaleContextHolder.getLocaleContext();
+		//构建当前请求的本地化上下文
 		LocaleContext localeContext = buildLocaleContext(request);
 
+		/*
+		同本地化上下文,这里先存储上一次请求的请求属性上下文,以便在本地请求中使用新的请求属性上下文,在使用完成后根据该
+		变量恢复原始请求的属性上下文.
+		 */
 		RequestAttributes previousAttributes = RequestContextHolder.getRequestAttributes();
+		//构建本次请求的请求属性上下文(包括 Request 对象的属性和Session对象的属性两部分,用于提供给后续的处理过程来读写其属性,一般用于跨方法传递参数)
 		ServletRequestAttributes requestAttributes = buildRequestAttributes(request, response, previousAttributes);
 
+		//获取或创建当前请求的异步管理器,用于对异步响应结果提供支持
 		WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
+		/*
+		为异步请求注册一个 Callable 拦截器.
+		拦截器 RequestBindingInterceptor 的作用同上面构造上下文的逻辑和下面初始化上下文持有器 initContextHolders 与重置上下文持有器
+		resetContextHolders 的作用相同.
+		因为请求的处理与当前线程是异步关系,所以在其他线程执行初始化操作时就需要使用执行注册的这个拦截器.
+		 */
 		asyncManager.registerCallableInterceptor(FrameworkServlet.class.getName(), new RequestBindingInterceptor());
 
+		/*
+		初始化上下文持有器,包括本地化上下文处理器 LocaleContextHolder 和 请求上下文处理器 RequestContextHolder,修改这两个持有器所
+		持有的上下文为新创建的上下文.
+		 */
 		initContextHolders(request, localeContext, requestAttributes);
 
 		try {
+			//初始化完成后,执行真正的处理请求方法
 			doService(request, response);
 		}
 		catch (ServletException | IOException ex) {
@@ -1010,16 +1033,24 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			throw ex;
 		}
 		catch (Throwable ex) {
+			//其他异常,记录后抛出新的嵌套异常,嵌套异常包含原始异常
 			failureCause = ex;
 			throw new NestedServletException("Request processing failed", ex);
 		}
 
 		finally {
+			//重置执行上下文的操作.
+			//重置为该方法前面逻辑保存的原始上下文.在异步拦截器里,重置上下文则把上下文设置为 null,这里设置为之前的上下文.
 			resetContextHolders(request, previousLocaleContext, previousAttributes);
 			if (requestAttributes != null) {
+				//标记请求完成,并执行一些请求完成的回调方法
 				requestAttributes.requestCompleted();
 			}
 			logResult(request, response, failureCause, asyncManager);
+			/*
+			向当前应用上下文中发布请求被处理的事件,事件类为 ServletRequestHandlerEvent,其中包含请求相关的一些属性,
+			如请求路径，请求方法等
+			 */
 			publishRequestHandledEvent(request, response, startTime, failureCause);
 		}
 	}

@@ -46,6 +46,9 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 
 /**
+ *
+ *
+ *
  * {@link javax.servlet.Filter} that makes form encoded data available through
  * the {@code ServletRequest.getParameter*()} family of methods during HTTP PUT
  * or PATCH requests.
@@ -56,6 +59,9 @@ import org.springframework.util.StringUtils;
  * reads form encoded content from the body of the request, and wraps the ServletRequest
  * in order to make the form data available as request parameters just like
  * it is for HTTP POST requests.
+ *
+ * <p>表单数据按照 Servlet 要求,只适用于 POST 方法,这个过滤器可以将表单数据用来支持 PUT 和 PATCH 方法.把表单参数
+ * 解析到请求参数中,以支持从 request 的 getParameter 中获取表单请求参数的功能.</p>
  *
  * @author Rossen Stoyanchev
  * @since 3.1
