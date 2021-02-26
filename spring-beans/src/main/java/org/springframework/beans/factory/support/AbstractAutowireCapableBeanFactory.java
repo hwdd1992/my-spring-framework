@@ -414,8 +414,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             throws BeansException {
 
         Object result = existingBean;
+        //遍历容器为所创建的 Bean 添加所有 BeanPostProcessor 后置处理器.
         for (BeanPostProcessor processor : getBeanPostProcessors()) {
-            Object current = processor.postProcessBeforeInitialization(result, beanName);
+            //调用 Bean 实例所有后置处理中初始化前的处理方法
+			//为 Bean 实例对象在初始化之前做一些自定义的处理
+        	Object current = processor.postProcessBeforeInitialization(result, beanName);
             if (current == null) {
                 return result;
             }
@@ -429,7 +432,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             throws BeansException {
 
         Object result = existingBean;
+        //遍历容器为所创建的 Bean 添加所有 BeanPostProcessor 后置处理器
         for (BeanPostProcessor processor : getBeanPostProcessors()) {
+        	/*
+        	调用
+        	 */
             Object current = processor.postProcessAfterInitialization(result, beanName);
             if (current == null) {
                 return result;
@@ -538,7 +545,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
     }
 
     /**
-     * Actually create the specified bean. Pre-creation processing has already happened
+	 *真正创建 Bean 的方法
+	 *
+     * <p>Actually create the specified bean. Pre-creation processing has already happened
      * at this point, e.g. checking {@code postProcessBeforeInstantiation} callbacks.
      * <p>Differentiates between default bean instantiation, use of a
      * factory method, and autowiring a constructor.
@@ -554,7 +563,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
     protected Object doCreateBean(String beanName, RootBeanDefinition mbd, @Nullable Object[] args)
             throws BeanCreationException {
 
-        // Instantiate the bean.
+        // Instantiate the bean. 创建 Bean 实例对象
         BeanWrapper instanceWrapper = null;
         if (mbd.isSingleton()) {
             //如果是单例的话,先清下缓存
@@ -613,9 +622,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         // Initialize the bean instance.
         Object exposedObject = bean;
         try {
-            //对 bean 进行填充,将各个属性值注入,其中,可能存在依赖于其他 bean 的属性,则会递归初始依赖 bean
+            //对 bean 进行填充(也就是依赖注入),将各个属性值注入,其中,可能存在依赖于其他 bean 的属性,则会递归初始依赖 bean
             populateBean(beanName, mbd, instanceWrapper);
-            //调用初始化方法,比如 init-method
+            //调用初始化方法,比如 init-method.上面是依赖注入,这里就是对 Bean 进行初始化,为 Bean 实例对象应用 BeanPostProcessor 后置处理器
             exposedObject = initializeBean(beanName, exposedObject, mbd);
         }
         catch (Throwable ex) {
@@ -1826,21 +1835,26 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
      * @see #applyBeanPostProcessorsAfterInitialization
      */
     protected Object initializeBean(String beanName, Object bean, @Nullable RootBeanDefinition mbd) {
+		//通过 JDK 的安全机制验证权限
         if (System.getSecurityManager() != null) {
+			//实现 PrivilegedAction 接口的匿名内部类
             AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
                 invokeAwareMethods(beanName, bean);
                 return null;
             }, getAccessControlContext());
         }
         else {
+        	//触发 Aware 回调通知.
             invokeAwareMethods(beanName, bean);
         }
 
         Object wrappedBean = bean;
+        //调用 BeanPostProcessor 后置处理器的回调方法,在 Bean 实例初始化前做一些处理.
         if (mbd == null || !mbd.isSynthetic()) {
             wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
         }
 
+        //调用 Bean 实例初始化方法,这个初始化方法是在 Spring Bean 定义配置文件中通过 init-Method 属性指定的.
         try {
             invokeInitMethods(beanName, wrappedBean, mbd);
         }
@@ -1849,6 +1863,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
                     (mbd != null ? mbd.getResourceDescription() : null),
                     beanName, "Invocation of init method failed", ex);
         }
+        //调用 BeanPostProcessor 后置处理器的回调方法,在 Bean 实例初始化之后做一些处理.
         if (mbd == null || !mbd.isSynthetic()) {
             wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
         }

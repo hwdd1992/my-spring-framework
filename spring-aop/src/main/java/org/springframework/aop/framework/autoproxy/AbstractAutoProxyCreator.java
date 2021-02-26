@@ -293,7 +293,9 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	}
 
 	/**
-	 * Create a proxy with the configured interceptors if the bean is
+	 * 选择代理策略.
+	 *
+	 * <p>Create a proxy with the configured interceptors if the bean is
 	 * identified as one to proxy by the subclass.
 	 * @see #getAdvicesAndAdvisorsForBean
 	 */
@@ -350,11 +352,12 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		}
 		if (isInfrastructureClass(bean.getClass()) || shouldSkip(bean.getClass(), beanName)) {
 			//给定的bean类是否代表一个基础设施类,基础设施类不应被代理,或者配置了指定bean不需要被代理
+			//所谓的基础类是指 Advice,PointCut,Advisor 等接口的实现类
 			this.advisedBeans.put(cacheKey, Boolean.FALSE);
 			return bean;
 		}
 
-		// Create proxy if we have advice. 如果存在增强方法则创建代理
+		// Create proxy if we have advice. 获取这个 Bean 的增强
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 		//如果获取到了增强则需要针对增强创建代理
 		if (specificInterceptors != DO_NOT_PROXY) {

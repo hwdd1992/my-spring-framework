@@ -47,12 +47,21 @@ import org.springframework.lang.Nullable;
 @SuppressWarnings("serial")
 public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializable {
 
+	/**
+	 * 从提供的配置实例 config 中获取 Advisor 列表,遍历处理这些 Advisor. <br>
+	 * 如果是 IntroductionAdvisor,则判断此 Advisor 能否应用到目标类 targetClass 上. <br>
+	 * 如果是 PointcutAdvisor,则判断此 Advisor 能否应用到目标方法 Method 上. 将满足条件的 <br>
+	 * Advisor 通过 AdvisorAdaptor 转换成拦截器列表返回
+	 *
+	 *
+	 */
 	@Override
 	public List<Object> getInterceptorsAndDynamicInterceptionAdvice(
 			Advised config, Method method, @Nullable Class<?> targetClass) {
 
 		// This is somewhat tricky... We have to process introductions first,
 		// but we need to preserve order in the ultimate list.
+		//这里实际上注册了一系列 AdvisorAdapter,用于将 Advisor 转化成 MethodInterceptor
 		AdvisorAdapterRegistry registry = GlobalAdvisorAdapterRegistry.getInstance();
 		Advisor[] advisors = config.getAdvisors();
 		List<Object> interceptorList = new ArrayList<>(advisors.length);
@@ -76,6 +85,7 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 						match = mm.matches(method, actualClass);
 					}
 					if (match) {
+						//将 Advisor 转化成 Interceptor
 						MethodInterceptor[] interceptors = registry.getInterceptors(advisor);
 						if (mm.isRuntime()) {
 							// Creating a new object instance in the getInterceptors() method

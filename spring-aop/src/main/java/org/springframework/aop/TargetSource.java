@@ -19,6 +19,24 @@ package org.springframework.aop;
 import org.springframework.lang.Nullable;
 
 /**
+ *
+ * <p>说人话：TargetSource 就是动态代理作用的对象.也就是代理工厂需要某个实例 <br>
+ *  进行动态代理时就是通过 TargetSource 来获取. TargetSource 有如下几个实例:
+ *
+ *  <li>
+ *    HotSwappableTargetSource: 进行线程安全的热切换到对另外一个对象实施动态代理操作
+ *  </li>
+ *  <li>
+ *     AbstractPoolingTargetSource: 每次进行生成动态代理对象时都返回一个新的对象（比如内部实现类CommonsPool2TargetSource就是例子，但它依赖于common-pool2包）
+ *  </li>
+ *  <li>
+ *     ThreadLocalTargetSource: 为每个进行请求的线程维护一个对象的 TargetSource
+ *  </li>
+ *  <li>
+ *      SingletonTargetSource: 最普遍最基本的单例 TargetSource, 在 Spring 中生成动态代理对象, 一般都是用这个 TargetSource
+ *  </li>
+ *
+ *
  * <p>A {@code TargetSource} is used to obtain the current "target" of
  * an AOP invocation, which will be invoked via reflection if no around
  * advice chooses to end the interceptor chain itself.
